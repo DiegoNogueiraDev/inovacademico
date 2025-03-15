@@ -1,0 +1,22 @@
+/**
+ * File: inovacademico/frontend/src/styles/globals.css
+ * Global styles with Tailwind imports
+ */
+ @tailwind base;
+ @tailwind components;
+ @tailwind utilities;
+ 
+ /* Custom styles */
+ html, body {
+   @apply bg-gray-900;
+ }
+ 
+ /* Custom gradient backgrounds */
+ .bg-gradient-purple-green {
+   @apply bg-gradient-to-r from-purple-600 to-green-500;
+ }
+ 
+ /* Custom focus effects */
+ .focus-ring-glow {
+   @apply focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-opacity-75;
+ }

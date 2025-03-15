@@ -1,0 +1,29 @@
+{
+    "name": "inovacademico",
+    "version": "1.0.0",
+    "description": "Application for correcting bibliographies using AI",
+    "private": true,
+    "workspaces": [
+      "backend",
+      "frontend"
+    ],
+    "scripts": {
+      "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+      "dev:backend": "npm run dev --workspace=backend",
+      "dev:frontend": "npm run dev --workspace=frontend",
+      "build": "concurrently \"npm run build --workspace=backend\" \"npm run build --workspace=frontend\"",
+      "start": "concurrently \"npm run start --workspace=backend\" \"npm run start --workspace=frontend\"",
+      "test": "concurrently \"npm run test --workspace=backend\" \"npm run test --workspace=frontend\""
+    },
+    "keywords": [
+      "bibliography",
+      "AI",
+      "academic",
+      "correction"
+    ],
+    "author": "",
+    "license": "ISC",
+    "devDependencies": {
+      "concurrently": "^8.2.2"
+    }
+  }
