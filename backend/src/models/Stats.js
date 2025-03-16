@@ -1,14 +1,25 @@
 /**
  * File: inovacademico/backend/src/models/Stats.js
- * Mongoose model for application statistics
+ * Modelo para estatísticas do sistema
  */
 const mongoose = require('mongoose');
+const Feedback = require('./Feedback');
+const logger = require('../utils/logger');
 
 const statsSchema = new mongoose.Schema({
+  // Identificador único para garantir apenas um documento
+  _id: {
+    type: String,
+    default: 'stats'
+  },
+  
+  // Contadores de correções
   totalCorrections: {
     type: Number,
     default: 0
   },
+  
+  // Contadores por estilo de citação
   correctionsByStyle: {
     abnt: {
       type: Number,
@@ -27,60 +38,151 @@ const statsSchema = new mongoose.Schema({
       default: 0
     }
   },
+  
+  // Estatísticas de avaliações
   averageRating: {
     type: Number,
     default: 0
   },
-  updatedAt: {
+  feedbackCount: {
+    type: Number,
+    default: 0
+  },
+  
+  // Dados de uso
+  activeUsers: {
+    type: Number,
+    default: 0
+  },
+  lastUpdated: {
     type: Date,
     default: Date.now
   }
 });
 
-// Only have one document for stats
+/**
+ * Método estático para obter estatísticas atuais
+ * @returns {Promise<Object>} - Estatísticas
+ */
 statsSchema.statics.getStats = async function() {
-  const stats = await this.findOne();
-  if (stats) {
+  try {
+    logger.debug('Buscando estatísticas do sistema');
+    
+    // Buscar ou criar documento de estatísticas
+    let stats = await this.findById('stats');
+    
+    if (!stats) {
+      logger.info('Criando documento de estatísticas inicial');
+      stats = await this.create({ _id: 'stats' });
+    }
+    
+    // Obter dados de feedback diretamente do modelo Feedback
+    const feedbackStats = await Feedback.getFeedbackStats().catch(() => null);
+    
+    if (feedbackStats) {
+      stats.averageRating = feedbackStats.averageRating;
+      stats.feedbackCount = feedbackStats.feedbackCount;
+      stats.lastUpdated = new Date();
+      
+      // Salvar atualizações
+      await stats.save();
+    }
+    
+    logger.debug('Estatísticas obtidas com sucesso');
+    
     return stats;
+  } catch (error) {
+    logger.logDBError('getStats', error, 'Stats');
+    throw error;
   }
-  
-  // Create initial stats document if it doesn't exist
-  return await this.create({});
 };
 
-// Increment correction count
+/**
+ * Método estático para incrementar contador de correções
+ * @param {String} style - Estilo de citação
+ * @returns {Promise<Object>} - Estatísticas atualizadas
+ */
 statsSchema.statics.incrementCorrections = async function(style) {
-  const stats = await this.getStats();
-  
-  stats.totalCorrections += 1;
-  if (style && stats.correctionsByStyle[style] !== undefined) {
+  try {
+    logger.debug(`Incrementando contador de correções para ${style}`);
+    style = style.toLowerCase();
+    
+    // Verificar se é um estilo válido
+    const validStyles = ['abnt', 'apa', 'vancouver', 'mla'];
+    if (!validStyles.includes(style)) {
+      logger.warn(`Tentativa de incrementar contador para estilo inválido: ${style}`);
+      return null;
+    }
+    
+    // Buscar ou criar documento de estatísticas
+    let stats = await this.findById('stats');
+    
+    if (!stats) {
+      logger.info('Criando documento de estatísticas inicial');
+      stats = await this.create({ _id: 'stats' });
+    }
+    
+    // Incrementar contadores
+    stats.totalCorrections += 1;
     stats.correctionsByStyle[style] += 1;
-  }
-  stats.updatedAt = Date.now();
-  
-  await stats.save();
-  return stats;
-};
-
-// Update average rating
-statsSchema.statics.updateAverageRating = async function() {
-  const Correction = mongoose.model('Correction');
-  
-  const result = await Correction.aggregate([
-    { $match: { rating: { $ne: null } } },
-    { $group: { _id: null, average: { $avg: "$rating" } } }
-  ]);
-  
-  if (result.length > 0) {
-    const stats = await this.getStats();
-    stats.averageRating = Math.round(result[0].average * 10) / 10; // Round to 1 decimal place
-    stats.updatedAt = Date.now();
+    stats.lastUpdated = new Date();
+    
+    // Salvar atualizações
     await stats.save();
+    
+    logger.debug('Contador de correções incrementado', {
+      style,
+      totalCorrections: stats.totalCorrections,
+      styleCorrections: stats.correctionsByStyle[style]
+    });
+    
+    return stats;
+  } catch (error) {
+    logger.logDBError('incrementCorrections', error, 'Stats');
+    throw error;
   }
-  
-  return await this.getStats();
 };
 
+/**
+ * Método estático para atualizar média de avaliações
+ * @returns {Promise<Object>} - Estatísticas atualizadas
+ */
+statsSchema.statics.updateAverageRating = async function() {
+  try {
+    logger.debug('Atualizando média de avaliações');
+    
+    // Buscar ou criar documento de estatísticas
+    let stats = await this.findById('stats');
+    
+    if (!stats) {
+      logger.info('Criando documento de estatísticas inicial');
+      stats = await this.create({ _id: 'stats' });
+    }
+    
+    // Calcular média de avaliações
+    const feedbackStats = await Feedback.calculateAverageRating();
+    
+    // Atualizar estatísticas
+    stats.averageRating = feedbackStats.averageRating;
+    stats.feedbackCount = feedbackStats.feedbackCount;
+    stats.lastUpdated = new Date();
+    
+    // Salvar atualizações
+    await stats.save();
+    
+    logger.debug('Média de avaliações atualizada', {
+      averageRating: stats.averageRating,
+      feedbackCount: stats.feedbackCount
+    });
+    
+    return stats;
+  } catch (error) {
+    logger.logDBError('updateAverageRating', error, 'Stats');
+    throw error;
+  }
+};
+
+// Criar modelo
 const Stats = mongoose.model('Stats', statsSchema);
 
 module.exports = Stats;

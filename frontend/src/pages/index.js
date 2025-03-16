@@ -13,12 +13,13 @@ import StatsCounter from '../components/StatsCounter';
 import historyService from '../services/historyService';
 
 export default function Home() {
-  const [correctedBibliography, setCorrectedBibliography] = useState(null);
+  const [correctionResult, setCorrectionResult] = useState(null);
   const [originalBibliography, setOriginalBibliography] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [showFeedback, setShowFeedback] = useState(false);
   const [bibliographyInput, setBibliographyInput] = useState('');
+  const [showHistoryDrawer, setShowHistoryDrawer] = useState(false);
 
   useEffect(() => {
     // Check if the app is running in the browser
@@ -36,18 +37,24 @@ export default function Home() {
     if (result.original) {
       setOriginalBibliography(result.original);
     }
-    setCorrectedBibliography(result.corrected);
+    
+    // Criar objeto de resultado completo
+    const fullResult = {
+      original: result.original || originalBibliography,
+      corrected: result.corrected,
+      style: result.style || 'abnt',
+      timestamp: new Date().toISOString()
+    };
+    
+    setCorrectionResult(fullResult);
     
     // Save to history
-    historyService.saveToHistory({
-      original: result.original,
-      corrected: result.corrected
-    });
+    historyService.saveToHistory(fullResult);
   };
 
   const handleHistoryItemSelect = (item) => {
     setBibliographyInput(item.original);
-    setCorrectedBibliography(item.corrected);
+    setCorrectionResult(item);
     setOriginalBibliography(item.original);
   };
 
@@ -59,6 +66,14 @@ export default function Home() {
     setShowFeedback(false);
   };
 
+  const handleToggleHistoryDrawer = () => {
+    setShowHistoryDrawer(!showHistoryDrawer);
+  };
+
+  const handleClearHistory = () => {
+    historyService.clearHistory();
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-950 to-gray-900">
       <Head>
@@ -67,7 +82,6 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="true" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
       </Head>
 
       <div className="absolute top-0 right-0 w-full h-full overflow-hidden pointer-events-none z-0">
@@ -91,7 +105,7 @@ export default function Home() {
                     <stop offset="100%" stopColor="#ffa500" />
                   </linearGradient>
                   <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
-                    <feGaussianBlur stdDeviation="6" result="blur" />
+                    <feGaussianBlur stdDeviation="4" result="blur" />
                     <feFlood floodColor="#e11d48" floodOpacity="0.3" result="color" />
                     <feComposite in="color" in2="blur" operator="in" result="glow" />
                     <feMerge>
@@ -102,72 +116,89 @@ export default function Home() {
                 </defs>
                 
                 {/* Base Group */}
-                <g className="mortar-board" transform="translate(140, 140)">
+                <g transform="translate(140, 140)">
                   {/* Cap top (square platform) */}
-                  <path d="M-60,-25 L0,-60 L60,-25 L0,10 Z" fill="url(#capGradient)" filter="url(#glow)">
+                  <path 
+                    d="M-60,-25 L0,-60 L60,-25 L0,10 Z" 
+                    fill="url(#capGradient)" 
+                    filter="url(#glow)"
+                    className="drop-shadow-lg"
+                  >
                     <animate 
                       attributeName="d" 
                       values="M-60,-25 L0,-60 L60,-25 L0,10 Z;
-                             M-58,-30 L0,-65 L58,-30 L0,5 Z;
+                             M-58,-28 L0,-63 L58,-28 L0,7 Z;
                              M-60,-25 L0,-60 L60,-25 L0,10 Z" 
-                      dur="3s" 
+                      dur="4s" 
                       repeatCount="indefinite" 
                       calcMode="spline"
                       keySplines="0.5 0 0.5 1; 0.5 0 0.5 1"/>
                   </path>
                   
                   {/* Cap bottom (cylinder) */}
-                  <path d="M-40,0 L-40,40 L40,40 L40,0 C40,15 -40,15 -40,0 Z" fill="#be123c" filter="url(#glow)">
+                  <path 
+                    d="M-40,0 L-40,30 L40,30 L40,0 C40,15 -40,15 -40,0 Z" 
+                    fill="#be123c" 
+                    filter="url(#glow)"
+                  >
                     <animate 
                       attributeName="d" 
-                      values="M-40,0 L-40,40 L40,40 L40,0 C40,15 -40,15 -40,0 Z;
-                             M-38,2 L-38,42 L38,42 L38,2 C38,17 -38,17 -38,2 Z;
-                             M-40,0 L-40,40 L40,40 L40,0 C40,15 -40,15 -40,0 Z" 
-                      dur="3s" 
+                      values="M-40,0 L-40,30 L40,30 L40,0 C40,15 -40,15 -40,0 Z;
+                             M-38,2 L-38,32 L38,32 L38,2 C38,17 -38,17 -38,2 Z;
+                             M-40,0 L-40,30 L40,30 L40,0 C40,15 -40,15 -40,0 Z" 
+                      dur="4s" 
                       repeatCount="indefinite" 
                       calcMode="spline"
                       keySplines="0.5 0 0.5 1; 0.5 0 0.5 1"/>
                   </path>
                   
                   {/* Button on top */}
-                  <circle cx="0" cy="-25" r="7" fill="#ffa500">
+                  <circle cx="0" cy="-25" r="6" fill="#ffa500">
                     <animate 
                       attributeName="cy" 
                       values="-25;-28;-25" 
-                      dur="3s" 
+                      dur="4s" 
                       repeatCount="indefinite" 
                       calcMode="spline"
                       keySplines="0.5 0 0.5 1; 0.5 0 0.5 1"/>
                   </circle>
                   
                   {/* Tassel */}
-                  <g className="tassel">
+                  <g>
                     {/* Tassel string */}
-                    <path d="M0,-25 C-15,5 -25,35 -30,60" stroke="url(#tasselGradient)" strokeWidth="3" fill="none" strokeLinecap="round">
+                    <path 
+                      d="M0,-25 C-15,0 -25,25 -30,50" 
+                      stroke="url(#tasselGradient)" 
+                      strokeWidth="3" 
+                      fill="none" 
+                      strokeLinecap="round"
+                    >
                       <animate 
                         attributeName="d" 
-                        values="M0,-25 C-15,5 -25,35 -30,60;
-                               M0,-25 C-10,5 -20,35 -25,60;
-                               M0,-25 C-15,5 -25,35 -30,60" 
-                        dur="3s" 
+                        values="M0,-25 C-15,0 -25,25 -30,50;
+                               M0,-25 C-10,0 -20,25 -25,50;
+                               M0,-25 C-15,0 -25,25 -30,50" 
+                        dur="4s" 
                         repeatCount="indefinite"
                         calcMode="spline"
                         keySplines="0.5 0 0.5 1; 0.5 0 0.5 1"/>
                     </path>
                     
                     {/* Tassel end */}
-                    <g transform="translate(-30, 60)">
+                    <g transform="translate(-30, 50)">
                       <animateTransform 
                         attributeName="transform" 
-                        type="rotate" 
-                        values="0 -30 60; 15 -30 60; -15 -30 60; 0 -30 60" 
-                        dur="3s" 
+                        type="translate" 
+                        values="-30,50; -25,50; -30,50" 
+                        dur="4s" 
                         repeatCount="indefinite"
                         calcMode="spline"
-                        keySplines="0.5 0 0.5 1; 0.5 0 0.5 1; 0.5 0 0.5 1"/>
+                        keySplines="0.5 0 0.5 1; 0.5 0 0.5 1"/>
                         
-                      <path d="M-5,0 C-5,5 -5,10 5,15 C-2,20 -5,25 0,30 C5,25 10,20 15,25 C15,20 15,15 10,10 C5,5 -5,5 -5,0 Z" 
-                            fill="url(#tasselGradient)">
+                      <path 
+                        d="M-5,0 C-5,5 -5,10 5,15 C-2,20 -5,25 0,30 C5,25 10,20 15,25 C15,20 15,15 10,10 C5,5 -5,5 -5,0 Z" 
+                        fill="url(#tasselGradient)"
+                      >
                         <animateTransform 
                           attributeName="transform" 
                           type="rotate" 
@@ -181,22 +212,22 @@ export default function Home() {
                 </g>
                 
                 {/* Decorative floating particles */}
-                <circle cx="50" cy="70" r="4" fill="#ec4899" opacity="0.8">
+                <circle cx="50" cy="70" r="3" fill="#ec4899" opacity="0.8">
                   <animate attributeName="cy" values="70;60;70" dur="4s" repeatCount="indefinite" calcMode="spline" keySplines="0.5 0 0.5 1; 0.5 0 0.5 1"/>
                   <animate attributeName="opacity" values="0.8;0.3;0.8" dur="4s" repeatCount="indefinite" calcMode="spline" keySplines="0.5 0 0.5 1; 0.5 0 0.5 1"/>
                 </circle>
                 
-                <circle cx="220" cy="100" r="5" fill="#f97316" opacity="0.8">
+                <circle cx="220" cy="100" r="4" fill="#f97316" opacity="0.8">
                   <animate attributeName="cy" values="100;85;100" dur="5s" repeatCount="indefinite" calcMode="spline" keySplines="0.5 0 0.5 1; 0.5 0 0.5 1"/>
                   <animate attributeName="opacity" values="0.8;0.4;0.8" dur="5s" repeatCount="indefinite" calcMode="spline" keySplines="0.5 0 0.5 1; 0.5 0 0.5 1"/>
                 </circle>
                 
-                <circle cx="180" cy="210" r="4" fill="#ec4899" opacity="0.7">
+                <circle cx="180" cy="210" r="3" fill="#ec4899" opacity="0.7">
                   <animate attributeName="cy" values="210;195;210" dur="4.5s" repeatCount="indefinite" calcMode="spline" keySplines="0.5 0 0.5 1; 0.5 0 0.5 1"/>
                   <animate attributeName="opacity" values="0.7;0.3;0.7" dur="4.5s" repeatCount="indefinite" calcMode="spline" keySplines="0.5 0 0.5 1; 0.5 0 0.5 1"/>
                 </circle>
                 
-                <circle cx="90" cy="240" r="6" fill="#ffd700" opacity="0.6">
+                <circle cx="90" cy="240" r="4" fill="#ffd700" opacity="0.6">
                   <animate attributeName="cy" values="240;225;240" dur="5.5s" repeatCount="indefinite" calcMode="spline" keySplines="0.5 0 0.5 1; 0.5 0 0.5 1"/>
                   <animate attributeName="opacity" values="0.6;0.2;0.6" dur="5.5s" repeatCount="indefinite" calcMode="spline" keySplines="0.5 0 0.5 1; 0.5 0 0.5 1"/>
                 </circle>
@@ -217,6 +248,17 @@ export default function Home() {
             </div>
             <nav>
               <ul className="flex space-x-5">
+                <li>
+                  <button 
+                    onClick={handleToggleHistoryDrawer}
+                    className="text-gray-300 hover:text-rose-300 text-sm font-medium flex items-center transition-colors"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Histórico
+                  </button>
+                </li>
                 <li>
                   <a 
                     href="#" 
@@ -302,14 +344,15 @@ export default function Home() {
           </div>
         )}
 
-        {correctedBibliography && !isLoading && (
-          <>
-            <ResultDisplay 
-              original={originalBibliography} 
-              corrected={correctedBibliography}
-              onRequestFeedback={handleRequestFeedback}
-            />
-          </>
+        {correctionResult && !isLoading && (
+          <ResultDisplay 
+            correctionResult={correctionResult}
+            onRequestFeedback={handleRequestFeedback}
+            onSaveToHistory={() => {
+              // Já está sendo salvo automaticamente, mas poderia ser usado para salvar novamente
+              alert('Bibliografia salva no histórico!');
+            }}
+          />
         )}
       </main>
 
@@ -324,13 +367,25 @@ export default function Home() {
       </footer>
 
       {/* History drawer */}
-      <HistoryDrawer onSelectItem={handleHistoryItemSelect} />
+      {showHistoryDrawer && (
+        <HistoryDrawer 
+          isOpen={showHistoryDrawer}
+          onClose={() => setShowHistoryDrawer(false)}
+          history={historyService.getHistory()}
+          onSelectItem={handleHistoryItemSelect}
+          onClearHistory={handleClearHistory}
+        />
+      )}
 
       {/* Feedback dialog */}
       {showFeedback && (
         <FeedbackDialog 
-          correctedText={correctedBibliography}
+          isOpen={showFeedback}
           onClose={handleCloseFeedback}
+          onSubmit={(feedback) => {
+            console.log('Feedback enviado:', feedback);
+            return Promise.resolve();
+          }}
         />
       )}
     </div>

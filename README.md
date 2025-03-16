@@ -1,7 +1,3 @@
-/**
- * File: inovacademico/README.md
- * Project-wide documentation
- */
 # InovAcadêmico - Correção de Bibliografias
 
 Aplicação para correção automatizada de bibliografias acadêmicas usando IA.

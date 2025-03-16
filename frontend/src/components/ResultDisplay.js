@@ -7,9 +7,10 @@ import hljs from 'highlight.js';
 import 'highlight.js/styles/atom-one-dark.css';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const ResultDisplay = ({ correctionResult, onSaveToHistory }) => {
+const ResultDisplay = ({ correctionResult, onSaveToHistory, onRequestFeedback }) => {
   const [copied, setCopied] = useState(false);
   const [highlightedResult, setHighlightedResult] = useState('');
+  const [activeTab, setActiveTab] = useState('comparison');
   
   useEffect(() => {
     if (correctionResult?.corrected) {
@@ -33,6 +34,12 @@ const ResultDisplay = ({ correctionResult, onSaveToHistory }) => {
   const handleSaveToHistory = () => {
     if (correctionResult && onSaveToHistory) {
       onSaveToHistory(correctionResult);
+    }
+  };
+
+  const handleRequestFeedback = () => {
+    if (onRequestFeedback) {
+      onRequestFeedback();
     }
   };
 
@@ -76,15 +83,103 @@ const ResultDisplay = ({ correctionResult, onSaveToHistory }) => {
                   </svg>
                   Salvar
                 </button>
+                <button
+                  onClick={handleRequestFeedback}
+                  className="flex items-center px-3 py-1 bg-gradient-to-r from-rose-600 to-orange-600 hover:from-rose-700 hover:to-orange-700 text-white text-sm rounded-md transition-colors duration-200"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+                  </svg>
+                  Avaliar
+                </button>
               </div>
             </div>
             
-            <div className="p-4 bg-gray-800 rounded-md overflow-auto shadow-inner mb-4">
-              <pre 
-                className="text-white whitespace-pre-wrap font-mono text-sm"
-                dangerouslySetInnerHTML={{ __html: highlightedResult }}
-              />
+            {/* Tabs */}
+            <div className="flex border-b border-gray-700 mb-4">
+              <button
+                onClick={() => setActiveTab('comparison')}
+                className={`flex-1 py-2 font-medium text-center transition-colors ${
+                  activeTab === 'comparison'
+                    ? 'text-rose-400 border-b-2 border-rose-500'
+                    : 'text-gray-400 hover:text-rose-300'
+                }`}
+              >
+                Comparação
+              </button>
+              <button
+                onClick={() => setActiveTab('original')}
+                className={`flex-1 py-2 font-medium text-center transition-colors ${
+                  activeTab === 'original'
+                    ? 'text-rose-400 border-b-2 border-rose-500'
+                    : 'text-gray-400 hover:text-rose-300'
+                }`}
+              >
+                Original
+              </button>
+              <button
+                onClick={() => setActiveTab('corrected')}
+                className={`flex-1 py-2 font-medium text-center transition-colors ${
+                  activeTab === 'corrected'
+                    ? 'text-rose-400 border-b-2 border-rose-500'
+                    : 'text-gray-400 hover:text-rose-300'
+                }`}
+              >
+                Corrigida
+              </button>
             </div>
+            
+            {/* Content based on active tab */}
+            {activeTab === 'comparison' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-gray-800/80 p-4 rounded-md">
+                  <div className="flex items-center mb-2">
+                    <div className="w-2 h-2 rounded-full bg-gray-500 mr-2"></div>
+                    <h3 className="text-gray-400 font-medium text-sm">Bibliografia Original</h3>
+                  </div>
+                  <div className="p-3 bg-gray-800 rounded-md text-gray-300 border-l-2 border-gray-600 font-mono text-sm">
+                    {correctionResult.original}
+                  </div>
+                </div>
+                
+                <div className="bg-gray-800/80 p-4 rounded-md">
+                  <div className="flex items-center mb-2">
+                    <div className="w-2 h-2 rounded-full bg-rose-500 mr-2"></div>
+                    <h3 className="text-rose-300 font-medium text-sm">Bibliografia Corrigida</h3>
+                  </div>
+                  <div className="p-3 bg-gray-800 rounded-md text-white border-l-2 border-rose-500 font-mono text-sm">
+                    <pre dangerouslySetInnerHTML={{ __html: highlightedResult }} />
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {activeTab === 'original' && (
+              <div className="bg-gray-800/80 p-4 rounded-md">
+                <div className="flex items-center mb-2">
+                  <div className="w-2 h-2 rounded-full bg-gray-500 mr-2"></div>
+                  <h3 className="text-gray-400 font-medium text-sm">Bibliografia Original</h3>
+                </div>
+                <div className="p-4 bg-gray-800 rounded-md text-gray-300 border-l-2 border-gray-600 font-mono text-sm whitespace-pre-wrap">
+                  {correctionResult.original}
+                </div>
+              </div>
+            )}
+            
+            {activeTab === 'corrected' && (
+              <div className="bg-gray-800/80 p-4 rounded-md">
+                <div className="flex items-center mb-2">
+                  <div className="w-2 h-2 rounded-full bg-rose-500 mr-2"></div>
+                  <h3 className="text-rose-300 font-medium text-sm">Bibliografia Corrigida</h3>
+                </div>
+                <div className="p-4 bg-gray-800 rounded-md overflow-auto shadow-inner">
+                  <pre 
+                    className="text-white whitespace-pre-wrap font-mono text-sm"
+                    dangerouslySetInnerHTML={{ __html: highlightedResult }}
+                  />
+                </div>
+              </div>
+            )}
             
             <div className="mt-4">
               <div className="flex items-center mb-2">
@@ -93,15 +188,6 @@ const ResultDisplay = ({ correctionResult, onSaveToHistory }) => {
               </div>
               
               <div className="pl-4 space-y-3">
-                {correctionResult.original && (
-                  <div className="flex flex-col">
-                    <span className="text-gray-400 text-xs mb-1">Bibliografia original:</span>
-                    <div className="bg-gray-800/60 p-3 rounded-md text-sm text-gray-300 border-l-2 border-gray-600">
-                      {correctionResult.original}
-                    </div>
-                  </div>
-                )}
-                
                 {correctionResult.style && (
                   <div className="flex items-center">
                     <span className="text-gray-400 text-xs mr-2">Estilo aplicado:</span>

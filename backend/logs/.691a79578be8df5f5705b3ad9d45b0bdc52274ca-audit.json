@@ -1,0 +1,20 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 14
+    },
+    "auditLog": "/home/diego/Projetos/inovacademico/backend/logs/.691a79578be8df5f5705b3ad9d45b0bdc52274ca-audit.json",
+    "files": [
+        {
+            "date": 1742091351137,
+            "name": "/home/diego/Projetos/inovacademico/backend/logs/inovacademico-2025-03-15.log",
+            "hash": "62bcaf93e0719ae08eb972d3c8c52f8b8eae671947cc0967b34c6e61fc78bb07"
+        },
+        {
+            "date": 1742094008424,
+            "name": "/home/diego/Projetos/inovacademico/backend/logs/inovacademico-2025-03-16.log",
+            "hash": "68567a976aad2c6764bbc608d3495df75ad1f0f74453acd95689530f28036451"
+        }
+    ],
+    "hashType": "sha256"
+}

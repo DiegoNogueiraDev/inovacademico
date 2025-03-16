@@ -1,0 +1,15 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 30
+    },
+    "auditLog": "/home/diego/Projetos/inovacademico/backend/logs/.a0d7d8d6757e8e4ddb33878a6ddce5766728354d-audit.json",
+    "files": [
+        {
+            "date": 1742091351140,
+            "name": "/home/diego/Projetos/inovacademico/backend/logs/inovacademico-error-2025-03-15.log",
+            "hash": "f0d254dff1d5476cdfae0e58db2cca440a06f5bfafa05a0abde2a267e93cffa7"
+        }
+    ],
+    "hashType": "sha256"
+}

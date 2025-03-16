@@ -7,7 +7,7 @@ require('dotenv').config();
 // Environment configuration
 const config = {
   NODE_ENV: process.env.NODE_ENV || 'development',
-  PORT: parseInt(process.env.PORT || '5000', 10),
+  PORT: parseInt(process.env.PORT || '8000', 10),
   MONGODB_URI: process.env.MONGODB_URI, // Adicionado para conexão com o MongoDB
   OPENROUTER_API_URL: process.env.OPENROUTER_API_URL,
   OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY,

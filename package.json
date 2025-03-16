@@ -4,26 +4,34 @@
     "description": "Application for correcting bibliographies using AI",
     "private": true,
     "workspaces": [
-      "backend",
-      "frontend"
+        "backend",
+        "frontend"
     ],
     "scripts": {
-      "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
-      "dev:backend": "npm run dev --workspace=backend",
-      "dev:frontend": "npm run dev --workspace=frontend",
-      "build": "concurrently \"npm run build --workspace=backend\" \"npm run build --workspace=frontend\"",
-      "start": "concurrently \"npm run start --workspace=backend\" \"npm run start --workspace=frontend\"",
-      "test": "concurrently \"npm run test --workspace=backend\" \"npm run test --workspace=frontend\""
+        "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+        "dev:backend": "npm run dev --workspace=backend",
+        "dev:frontend": "npm run dev --workspace=frontend",
+        "build": "concurrently \"npm run build --workspace=backend\" \"npm run build --workspace=frontend\"",
+        "start": "concurrently \"npm run start --workspace=backend\" \"npm run start --workspace=frontend\"",
+        "test": "concurrently \"npm run test --workspace=backend\" \"npm run test --workspace=frontend\""
     },
     "keywords": [
-      "bibliography",
-      "AI",
-      "academic",
-      "correction"
+        "bibliography",
+        "AI",
+        "academic",
+        "correction"
     ],
     "author": "",
     "license": "ISC",
     "devDependencies": {
-      "concurrently": "^8.2.2"
+        "concurrently": "^8.2.2"
+    },
+    "dependencies": {
+        "chart.js": "^4.4.8",
+        "csv-parser": "^3.2.0",
+        "framer-motion": "^12.5.0",
+        "highlight.js": "^11.11.1",
+        "multer": "^1.4.5-lts.1",
+        "react-chartjs-2": "^5.3.0"
     }
-  }
+}

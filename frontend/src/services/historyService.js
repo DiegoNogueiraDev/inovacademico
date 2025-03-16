@@ -1,83 +1,95 @@
 /**
  * File: inovacademico/frontend/src/services/historyService.js
- * Service for managing correction history
+ * Service for managing bibliography correction history
  */
 
-/**
- * Service for managing bibliography correction history in localStorage
- */
-const HISTORY_KEY = 'inovacademico_history';
-const MAX_HISTORY_ITEMS = 10;
+// Chave para armazenar o histórico no localStorage
+const HISTORY_KEY = 'bibliography_history';
+
+// Número máximo de itens no histórico
+const MAX_HISTORY_ITEMS = 50;
 
 const historyService = {
   /**
-   * Save a correction to history
-   * @param {Object} correction - The correction data with original and corrected text
+   * Salva um item no histórico
+   * @param {Object} item - Item a ser salvo (contém original, corrected, style, timestamp)
    */
-  saveToHistory(correction) {
+  saveToHistory: (item) => {
     try {
-      const history = this.getHistory();
+      if (!item || !item.original || !item.corrected) return;
       
-      // Create history item with timestamp
-      const historyItem = {
-        id: Date.now(),
-        timestamp: new Date().toISOString(),
-        original: correction.original,
-        corrected: correction.corrected
-      };
-      
-      // Add to beginning of array
-      history.unshift(historyItem);
-      
-      // Limit history size
-      if (history.length > MAX_HISTORY_ITEMS) {
-        history.pop();
+      // Adiciona timestamp se não existir
+      if (!item.timestamp) {
+        item.timestamp = new Date().toISOString();
       }
       
-      // Save back to localStorage
-      localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+      // Adiciona ID único
+      const newItem = {
+        ...item,
+        id: `hist_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      };
       
-      return historyItem;
+      // Recupera histórico existente
+      const history = historyService.getHistory();
+      
+      // Verifica se já existe um item idêntico para evitar duplicatas
+      const isDuplicate = history.some(
+        existingItem => 
+          existingItem.original === newItem.original && 
+          existingItem.corrected === newItem.corrected
+      );
+      
+      if (isDuplicate) return;
+      
+      // Adiciona novo item no início do array
+      history.unshift(newItem);
+      
+      // Limita o tamanho do histórico
+      const limitedHistory = history.slice(0, MAX_HISTORY_ITEMS);
+      
+      // Salva no localStorage
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(limitedHistory));
     } catch (error) {
-      console.error('Error saving to history:', error);
-      return null;
+      console.error('Erro ao salvar no histórico:', error);
     }
   },
   
   /**
-   * Get correction history
-   * @returns {Array} - Array of history items
+   * Recupera todo o histórico
+   * @returns {Array} Array de itens do histórico
    */
-  getHistory() {
+  getHistory: () => {
     try {
-      const storedHistory = localStorage.getItem(HISTORY_KEY);
-      return storedHistory ? JSON.parse(storedHistory) : [];
+      const historyJson = localStorage.getItem(HISTORY_KEY);
+      return historyJson ? JSON.parse(historyJson) : [];
     } catch (error) {
-      console.error('Error retrieving history:', error);
+      console.error('Erro ao recuperar histórico:', error);
       return [];
     }
   },
   
   /**
-   * Clear all history
+   * Remove um item específico do histórico
+   * @param {string} id - ID do item a ser removido
    */
-  clearHistory() {
-    localStorage.removeItem(HISTORY_KEY);
+  deleteHistoryItem: (id) => {
+    try {
+      const history = historyService.getHistory();
+      const updatedHistory = history.filter(item => item.id !== id);
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(updatedHistory));
+    } catch (error) {
+      console.error('Erro ao deletar item do histórico:', error);
+    }
   },
   
   /**
-   * Delete a specific history item
-   * @param {number} id - The ID of the history item to delete
+   * Limpa todo o histórico
    */
-  deleteHistoryItem(id) {
+  clearHistory: () => {
     try {
-      let history = this.getHistory();
-      history = history.filter(item => item.id !== id);
-      localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
-      return true;
+      localStorage.removeItem(HISTORY_KEY);
     } catch (error) {
-      console.error('Error deleting history item:', error);
-      return false;
+      console.error('Erro ao limpar histórico:', error);
     }
   }
 };
