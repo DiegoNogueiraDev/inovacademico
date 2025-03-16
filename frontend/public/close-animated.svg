@@ -1,0 +1,124 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="100%" height="100%">
+  <defs>
+    <linearGradient id="closeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#e11d48">
+        <animate attributeName="stop-color" values="#e11d48; #f97316; #e11d48" dur="3s" repeatCount="indefinite" />
+      </stop>
+      <stop offset="100%" stop-color="#f97316">
+        <animate attributeName="stop-color" values="#f97316; #e11d48; #f97316" dur="3s" repeatCount="indefinite" />
+      </stop>
+    </linearGradient>
+  </defs>
+  
+  <!-- Círculo exterior (opcional) -->
+  <circle cx="12" cy="12" r="10" fill="none" stroke="url(#closeGradient)" stroke-width="1" opacity="0.2">
+    <animate 
+      attributeName="r" 
+      values="10; 11; 10" 
+      dur="3s" 
+      repeatCount="indefinite" 
+    />
+    <animate 
+      attributeName="opacity" 
+      values="0.2; 0.4; 0.2" 
+      dur="3s" 
+      repeatCount="indefinite" 
+    />
+  </circle>
+  
+  <!-- Linha diagonal 1 (parte do X) -->
+  <line
+    x1="6" y1="6" x2="18" y2="18"
+    stroke="url(#closeGradient)"
+    stroke-width="2"
+    stroke-linecap="round"
+  >
+    <animate 
+      attributeName="stroke-dasharray" 
+      values="0 20; 20 0; 20 0" 
+      dur="0.5s" 
+      begin="mouseover"
+      fill="freeze"
+    />
+    <animate 
+      attributeName="stroke-dashoffset" 
+      values="20; 0; 0" 
+      dur="0.5s" 
+      begin="mouseover"
+      fill="freeze"
+    />
+    <animate 
+      attributeName="stroke-dasharray" 
+      values="20 0; 0 20; 0 20" 
+      dur="0.5s" 
+      begin="mouseout"
+      fill="freeze"
+    />
+    <animate 
+      attributeName="stroke-dashoffset" 
+      values="0; 20; 20" 
+      dur="0.5s" 
+      begin="mouseout"
+      fill="freeze"
+    />
+  </line>
+  
+  <!-- Linha diagonal 2 (parte do X) -->
+  <line
+    x1="6" y1="18" x2="18" y2="6"
+    stroke="url(#closeGradient)"
+    stroke-width="2"
+    stroke-linecap="round"
+  >
+    <animate 
+      attributeName="stroke-dasharray" 
+      values="0 20; 20 0; 20 0" 
+      dur="0.5s" 
+      begin="mouseover"
+      fill="freeze"
+    />
+    <animate 
+      attributeName="stroke-dashoffset" 
+      values="20; 0; 0" 
+      dur="0.5s" 
+      begin="mouseover"
+      fill="freeze"
+    />
+    <animate 
+      attributeName="stroke-dasharray" 
+      values="20 0; 0 20; 0 20" 
+      dur="0.5s" 
+      begin="mouseout"
+      fill="freeze"
+    />
+    <animate 
+      attributeName="stroke-dashoffset" 
+      values="0; 20; 20" 
+      dur="0.5s" 
+      begin="mouseout"
+      fill="freeze"
+    />
+  </line>
+  
+  <!-- Animação de rotação no hover -->
+  <g id="rotateGroup">
+    <animateTransform 
+      attributeName="transform"
+      type="rotate"
+      from="0 12 12" 
+      to="90 12 12"
+      dur="0.3s"
+      begin="mouseover"
+      fill="freeze"
+    />
+    <animateTransform 
+      attributeName="transform"
+      type="rotate"
+      from="90 12 12" 
+      to="0 12 12"
+      dur="0.3s"
+      begin="mouseout"
+      fill="freeze"
+    />
+  </g>
+</svg> 

@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+  <!-- Definições de gradientes e filtros -->
+  <defs>
+    <linearGradient id="capGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#e11d48">
+        <animate attributeName="stop-color" values="#e11d48; #fbbf24; #f97316; #e11d48" dur="6s" repeatCount="indefinite" />
+      </stop>
+      <stop offset="50%" stop-color="#fbbf24">
+        <animate attributeName="stop-color" values="#fbbf24; #f97316; #e11d48; #fbbf24" dur="6s" repeatCount="indefinite" />
+      </stop>
+      <stop offset="100%" stop-color="#f97316">
+        <animate attributeName="stop-color" values="#f97316; #e11d48; #fbbf24; #f97316" dur="6s" repeatCount="indefinite" />
+      </stop>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feGaussianBlur stdDeviation="3" result="blur" />
+      <feFlood flood-color="black" flood-opacity="0.3" result="color" />
+      <feComposite in="color" in2="blur" operator="in" result="shadow" />
+      <feMerge>
+        <feMergeNode in="shadow" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+    <filter id="glow" x="-10%" y="-10%" width="120%" height="120%">
+      <feGaussianBlur stdDeviation="4" result="blur" />
+      <feFlood flood-color="#e11d48" flood-opacity="0.3" result="color" />
+      <feComposite in="color" in2="blur" operator="in" result="glow" />
+      <feMerge>
+        <feMergeNode in="glow" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Grupo de animação geral para movimento do capelo -->
+  <g id="cap-animation">
+    <!-- Animação vertical suave -->
+    <animateTransform 
+      attributeName="transform"
+      attributeType="XML"
+      type="translate"
+      values="0 0; 0 -15; 0 0"
+      keyTimes="0;0.5;1"
+      dur="4s"
+      repeatCount="indefinite"
+      calcMode="spline"
+      keySplines="0.42 0 0.58 1;0.42 0 0.58 1"/>
+
+    <!-- Grupo para rotação do capelo -->
+    <g id="cap-rotation" transform="translate(400, 300)" filter="url(#shadow)">
+      <!-- Animação de rotação suave -->
+      <animateTransform 
+        attributeName="transform"
+        attributeType="XML"
+        type="rotate"
+        values="-3 0 0; 3 0 0; -3 0 0"
+        keyTimes="0;0.5;1"
+        dur="5s"
+        repeatCount="indefinite"
+        calcMode="spline"
+        keySplines="0.42 0 0.58 1;0.42 0 0.58 1"
+        additive="sum"/>
+      
+      <!-- Path complexo do capelo com gradiente animado -->
+      <g transform="translate(-400, -300)">
+        <!-- Aplicando uma leve escala à forma -->
+        <animateTransform 
+          attributeName="transform"
+          type="scale"
+          values="1; 1.02; 1"
+          dur="4s"
+          repeatCount="indefinite"
+          calcMode="spline"
+          keySplines="0.42 0 0.58 1;0.42 0 0.58 1"
+          additive="sum"/>
+        
+        <!-- O path complexo fornecido com cores do tema -->
+        <path d="M 672.500 59.061 C 667.550 60.082, 640.325 65.459, 612 71.010 C 583.675 76.560, 550.375 83.091, 538 85.522 C 494.510 94.066, 306.139 130.985, 274 137.264 L 241.500 143.612 209.206 193.056 C 191.444 220.250, 176.594 242.393, 176.206 242.262 C 175.068 241.877, 174.810 231.129, 175.825 226.372 C 176.338 223.967, 176.379 222, 175.916 222 C 175.454 222, 172.674 222.898, 169.740 223.996 C 165.276 225.666, 164.196 226.569, 163.127 229.525 C 161.001 235.405, 160.700 243.039, 162.320 250 L 163.833 256.500 161.420 253.500 C 156.123 246.914, 153.318 230.813, 154.956 216.395 C 155.505 211.569, 155.753 207.419, 155.507 207.174 C 155.262 206.929, 148.522 209.544, 140.531 212.987 C 123.871 220.163, 124.841 218.670, 127.551 232.953 C 129.330 242.334, 133.912 255.889, 138.129 264.250 C 141.205 270.348, 140.827 270.988, 135.700 268.359 C 128.319 264.575, 119.701 254.799, 113.961 243.701 C 112.058 240.019, 110.207 237.006, 109.850 237.004 C 109.037 236.999, 93.859 260.825, 93.291 262.996 C 92.679 265.335, 103.142 285.452, 108.974 293.152 C 111.745 296.811, 117.572 303.153, 121.923 307.245 L 129.833 314.687 123.073 325.093 C 119.355 330.817, 101.393 358.361, 83.157 386.302 C 64.920 414.243, 49.998 437.643, 49.995 438.302 C 49.991 439.237, 54.825 453.669, 55.502 454.744 C 55.586 454.879, 75.196 451.389, 99.078 446.988 C 193.428 429.605, 204.143 427.745, 204.955 428.612 C 205.710 429.420, 238.491 507.440, 251.755 540 C 254.780 547.425, 258.529 555.354, 260.086 557.620 C 267.411 568.280, 280.159 576.115, 297.500 580.615 C 311.101 584.146, 337.165 585.013, 356.913 582.594 C 425.140 574.234, 504.618 539.583, 569 490.128 C 590.208 473.837, 616.316 448.576, 629.078 432 C 648.516 406.751, 657.894 385.845, 658.781 365.783 C 659.346 352.988, 658.697 350.045, 651.594 333.186 C 634.108 291.684, 607.669 227.491, 607.685 226.576 C 607.695 225.984, 626.220 192.465, 648.852 152.088 C 671.483 111.711, 690.007 77.961, 690.016 77.088 C 690.025 76.215, 689.036 71.338, 687.819 66.250 C 685.274 55.612, 686.480 56.178, 672.500 59.061" 
+              fill="url(#capGradient)"
+              filter="url(#glow)"/>
+      </g>
+    </g> <!-- Fim do grupo de rotação do capelo -->
+  </g> <!-- Fim do grupo de animação geral -->
+  
+  <!-- Efeitos de partículas decorativas -->
+  <circle cx="200" cy="150" r="3" fill="#e11d48" opacity="0.7">
+    <animate attributeName="cy" values="150; 140; 150" dur="3s" repeatCount="indefinite" calcMode="spline" keySplines="0.4 0 0.6 1; 0.4 0 0.6 1" />
+    <animate attributeName="opacity" values="0.7; 0.3; 0.7" dur="3s" repeatCount="indefinite" />
+  </circle>
+  
+  <circle cx="600" cy="200" r="4" fill="#fbbf24" opacity="0.5">
+    <animate attributeName="cy" values="200; 190; 200" dur="4s" repeatCount="indefinite" calcMode="spline" keySplines="0.4 0 0.6 1; 0.4 0 0.6 1" />
+    <animate attributeName="opacity" values="0.5; 0.2; 0.5" dur="4s" repeatCount="indefinite" />
+  </circle>
+  
+  <circle cx="450" cy="480" r="3" fill="#ec4899" opacity="0.6">
+    <animate attributeName="cy" values="480; 470; 480" dur="3.5s" repeatCount="indefinite" calcMode="spline" keySplines="0.4 0 0.6 1; 0.4 0 0.6 1" />
+    <animate attributeName="opacity" values="0.6; 0.3; 0.6" dur="3.5s" repeatCount="indefinite" />
+  </circle>
+</svg> 
