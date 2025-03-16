@@ -1,139 +1,176 @@
 /**
  * File: inovacademico/frontend/src/components/FeedbackDialog.js
- * Feedback dialog component
+ * Dialog component for collecting user feedback
  */
 import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 
-const FeedbackDialog = ({ correctedText, onClose }) => {
+const FeedbackDialog = ({ isOpen, onClose, onSubmit }) => {
   const [rating, setRating] = useState(0);
-  const [feedback, setFeedback] = useState('');
+  const [comment, setComment] = useState('');
+  const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
-  const handleSubmit = (e) => {
+  if (!isOpen) return null;
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // In a real app, you would send this data to your backend
-    console.log('Feedback submitted:', { rating, feedback, correctedText });
+    if (rating === 0) return;
     
-    // Show success message
-    setSubmitted(true);
+    setSubmitting(true);
     
-    // Close after 2 seconds
-    setTimeout(() => {
+    try {
+      await onSubmit({ rating, comment });
+      setSubmitted(true);
+      
+      // Reset form after 3 seconds and close
+      setTimeout(() => {
+        setRating(0);
+        setComment('');
+        setSubmitted(false);
+        onClose();
+      }, 2000);
+    } catch (error) {
+      console.error('Error submitting feedback:', error);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleOutsideClick = (e) => {
+    if (e.target === e.currentTarget) {
       onClose();
-    }, 2000);
+    }
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
-      <div className="bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6 relative">
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-white"
+    <div 
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50"
+      onClick={handleOutsideClick}
+    >
+      <AnimatePresence>
+        <motion.div 
+          className="w-full max-w-md bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl shadow-xl overflow-hidden border border-gray-700"
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0.9, opacity: 0 }}
+          transition={{ type: 'spring', damping: 25, stiffness: 400 }}
+          onClick={(e) => e.stopPropagation()}
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-5 w-5"
-            viewBox="0 0 20 20"
-            fill="currentColor"
-          >
-            <path
-              fillRule="evenodd"
-              d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-              clipRule="evenodd"
-            />
-          </svg>
-        </button>
-        
-        {submitted ? (
-          <div className="text-center py-10">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-12 w-12 mx-auto text-green-500 mb-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M5 13l4 4L19 7"
-              />
-            </svg>
-            <h3 className="text-xl font-semibold text-white mb-2">Obrigado pelo feedback!</h3>
-            <p className="text-gray-300">Sua opinião é muito importante para melhorarmos nosso serviço.</p>
-          </div>
-        ) : (
-          <>
-            <h2 className="text-xl font-bold text-white mb-4">
-              Como foi a correção?
-            </h2>
-            
-            <form onSubmit={handleSubmit}>
-              <div className="mb-6">
-                <label className="block text-gray-300 mb-2">Avalie a qualidade da correção:</label>
-                <div className="flex space-x-3 justify-center">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <button
-                      key={star}
-                      type="button"
-                      onClick={() => setRating(star)}
-                      className="focus:outline-none"
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className={`h-8 w-8 ${
-                          rating >= star ? 'text-yellow-400' : 'text-gray-500'
-                        } transition-colors`}
-                        viewBox="0 0 20 20"
-                        fill="currentColor"
-                      >
-                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                      </svg>
-                    </button>
-                  ))}
+          {/* Top gradient bar */}
+          <div className="h-2 bg-gradient-to-r from-rose-500 via-pink-500 to-orange-500"></div>
+          
+          <div className="p-6">
+            {submitted ? (
+              <motion.div 
+                className="py-8 flex flex-col items-center justify-center"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+              >
+                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-rose-500 to-orange-500 flex items-center justify-center mb-4">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M20 6L9 17l-5-5" />
+                  </svg>
                 </div>
-              </div>
-              
-              <div className="mb-6">
-                <label className="block text-gray-300 mb-2" htmlFor="feedback">
-                  Comentários (opcional):
-                </label>
-                <textarea
-                  id="feedback"
-                  className="w-full bg-gray-700 border border-gray-600 rounded-md p-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  rows="3"
-                  value={feedback}
-                  onChange={(e) => setFeedback(e.target.value)}
-                  placeholder="Nos conte o que achou da correção..."
-                ></textarea>
-              </div>
-              
-              <div className="flex justify-end">
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="text-gray-300 hover:text-white mr-4"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={rating === 0}
-                  className={`px-4 py-2 rounded-md ${
-                    rating > 0
-                      ? 'bg-purple-600 hover:bg-purple-700 text-white'
-                      : 'bg-gray-600 text-gray-300 cursor-not-allowed'
-                  }`}
-                >
-                  Enviar feedback
-                </button>
-              </div>
-            </form>
-          </>
-        )}
-      </div>
+                <h3 className="text-xl font-bold text-white mb-2">Obrigado pelo feedback!</h3>
+                <p className="text-gray-400 text-center">Sua opinião é muito importante para melhorarmos nosso serviço.</p>
+              </motion.div>
+            ) : (
+              <>
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-xl font-bold bg-gradient-to-r from-rose-400 to-orange-300 inline-block text-transparent bg-clip-text">Sua opinião é importante</h2>
+                  <button 
+                    onClick={onClose}
+                    className="text-gray-400 hover:text-white transition-colors"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M18 6L6 18M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+                
+                <form onSubmit={handleSubmit}>
+                  <div className="mb-6">
+                    <label className="text-rose-300 font-medium text-sm block mb-3">Como você avalia a correção da bibliografia?</label>
+                    <div className="flex justify-center">
+                      <div className="flex gap-3">
+                        {[1, 2, 3, 4, 5].map((value) => (
+                          <button
+                            key={value}
+                            type="button"
+                            onClick={() => setRating(value)}
+                            className={`
+                              w-10 h-10 rounded-full flex items-center justify-center transition-all transform
+                              ${rating >= value 
+                                ? 'bg-gradient-to-br from-rose-500 to-orange-500 text-white scale-110 shadow-lg shadow-rose-500/20' 
+                                : 'bg-gray-800 text-gray-500 hover:bg-gray-700 hover:text-gray-300'
+                              }
+                            `}
+                          >
+                            <span className="text-lg">{value}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="flex justify-between text-xs text-gray-500 mt-2 px-3">
+                      <span>Insatisfeito</span>
+                      <span>Excelente</span>
+                    </div>
+                  </div>
+                  
+                  <div className="mb-6">
+                    <label htmlFor="comment" className="text-rose-300 font-medium text-sm block mb-2">
+                      Algum comentário adicional? (opcional)
+                    </label>
+                    <div className="relative">
+                      <textarea
+                        id="comment"
+                        value={comment}
+                        onChange={(e) => setComment(e.target.value)}
+                        placeholder="Compartilhe sua experiência ou sugestões para melhorias..."
+                        className="w-full p-3 bg-gray-800/80 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all duration-300 resize-none h-28"
+                      />
+                      <div className="absolute inset-0 border border-rose-500/0 rounded-lg pointer-events-none focus-within:border-rose-500/30 transition-colors duration-300"></div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex justify-end">
+                    <button
+                      type="button"
+                      onClick={onClose}
+                      className="px-4 py-2 text-gray-300 hover:text-white mr-3 rounded-lg transition-colors"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={rating === 0 || submitting}
+                      className={`px-5 py-2 bg-gradient-to-r from-rose-600 to-orange-600 hover:from-rose-700 hover:to-orange-700 text-white font-medium rounded-lg shadow-lg transition-all transform hover:-translate-y-1 focus:outline-none focus:ring-2 focus:ring-rose-500 ${
+                        rating === 0 || submitting ? 'opacity-50 cursor-not-allowed' : ''
+                      }`}
+                    >
+                      <div className="flex items-center">
+                        {submitting ? (
+                          <svg className="animate-spin h-4 w-4 mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                        ) : (
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                        )}
+                        Enviar Feedback
+                      </div>
+                    </button>
+                  </div>
+                </form>
+              </>
+            )}
+          </div>
+        </motion.div>
+      </AnimatePresence>
     </div>
   );
 };

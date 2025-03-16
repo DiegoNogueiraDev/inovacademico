@@ -16,9 +16,6 @@ const errorHandler = require('./middlewares/errorHandler');
 const app = express();
 const PORT = config.PORT || 5000;
 
-// Connect to MongoDB
-connectDB();
-
 // Middleware
 app.use(helmet()); // Security headers
 app.use(cors()); // Enable CORS
@@ -37,9 +34,16 @@ app.get('/', (req, res) => {
 // Error handling middleware
 app.use(errorHandler);
 
-// Start the server
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+// Connect to MongoDB and then start the server
+connectDB()
+  .then(() => {
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+    });
+  })
+  .catch((error) => {
+    console.error('Failed to connect to MongoDB:', error);
+    process.exit(1);
+  });
 
 module.exports = app; // For testing purposes

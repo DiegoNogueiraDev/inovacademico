@@ -6,9 +6,6 @@ const openRouterService = require('../services/openRouterService');
 const Correction = require('../models/Correction');
 const Stats = require('../models/Stats');
 
-/**
- * Bibliography controller
- */
 const biblioController = {
   /**
    * Correct a bibliography using the OpenRouter service
@@ -19,20 +16,29 @@ const biblioController = {
   async correctBibliography(req, res, next) {
     try {
       const { bibliography, style = 'abnt' } = req.body;
-      
+
+      // Validação de entrada
       if (!bibliography || typeof bibliography !== 'string' || !bibliography.trim()) {
         return res.status(400).json({
           success: false,
           message: 'Bibliografia é obrigatória e deve ser um texto não vazio'
         });
       }
-      
+
       const correctedBibliography = await openRouterService.correctBibliography(bibliography, style);
-      
-      // Save correction to database
+
+      // Caso a resposta venha vazia, retorna erro 500
+      if (!correctedBibliography) {
+        return res.status(500).json({
+          success: false,
+          message: 'A correção da bibliografia retornou um resultado vazio'
+        });
+      }
+
+      // Salva a correção no banco de dados
       const ipAddress = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
       const userAgent = req.headers['user-agent'];
-      
+
       const correction = new Correction({
         original: bibliography,
         corrected: correctedBibliography,
@@ -40,12 +46,12 @@ const biblioController = {
         ipAddress,
         userAgent
       });
-      
+
       await correction.save();
-      
-      // Update statistics
+
+      // Atualiza as estatísticas
       await Stats.incrementCorrections(style);
-      
+
       return res.status(200).json({
         success: true,
         data: {
@@ -68,15 +74,10 @@ const biblioController = {
   async submitFeedback(req, res, next) {
     try {
       const { rating, comment, original, corrected } = req.body;
-      
-      // Find the correction to update
-      let correction = await Correction.findOne({
-        original,
-        corrected
-      });
-      
+
+      let correction = await Correction.findOne({ original, corrected });
+
       if (!correction) {
-        // If correction not found, create a new one
         correction = new Correction({
           original,
           corrected,
@@ -84,16 +85,13 @@ const biblioController = {
           feedback: comment
         });
       } else {
-        // Update existing correction
         correction.rating = rating;
         correction.feedback = comment;
       }
-      
+
       await correction.save();
-      
-      // Update average rating statistics
       await Stats.updateAverageRating();
-      
+
       return res.status(200).json({
         success: true,
         message: 'Feedback recebido com sucesso'
