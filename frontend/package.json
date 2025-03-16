@@ -17,8 +17,10 @@
     "author": "",
     "license": "ISC",
     "dependencies": {
+        "@headlessui/react": "^2.2.0",
         "axios": "^1.6.2",
         "consola": "^3.4.0",
+        "framer-motion": "^12.5.0",
         "next": "^14.0.3",
         "react": "^18.2.0",
         "react-dom": "^18.2.0"

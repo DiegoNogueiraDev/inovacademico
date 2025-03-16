@@ -4,6 +4,7 @@
  */
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Dialog } from '@headlessui/react';
 
 const FeedbackDialog = ({ isOpen, onClose, onSubmit }) => {
   const [rating, setRating] = useState(0);
@@ -79,7 +80,12 @@ const FeedbackDialog = ({ isOpen, onClose, onSubmit }) => {
             ) : (
               <>
                 <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-xl font-bold bg-gradient-to-r from-rose-400 to-orange-300 inline-block text-transparent bg-clip-text">Sua opinião é importante</h2>
+                  <Dialog.Title as="h3" className="text-lg font-medium text-center relative">
+                    <div className="flex items-center justify-center">
+                      <img src="/icon-theme.svg" alt="InovAcadêmico" className="w-8 h-8 mr-2" />
+                      <span>Enviar Feedback</span>
+                    </div>
+                  </Dialog.Title>
                   <button 
                     onClick={onClose}
                     className="text-gray-400 hover:text-white transition-colors"

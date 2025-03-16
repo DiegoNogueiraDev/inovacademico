@@ -1,6 +1,20 @@
+<img src="frontend/public/graduation-cap-theme.svg" width="150" alt="InovAcadêmico Logo">
+
 # InovAcadêmico - Correção de Bibliografias
 
 Aplicação para correção automatizada de bibliografias acadêmicas usando IA.
+
+> **PROMOÇÃO**: TUDO DE GRAÇA POR TEMPO LIMITADO!
+
+## Funcionalidades
+
+- Correção automática de referências bibliográficas seguindo normas acadêmicas (ABNT, APA, etc.)
+- Interface responsiva para dispositivos desktop e mobile
+- Animações e elementos visuais interativos
+- Histórico de correções
+- Sistema de feedback para melhorias dos resultados
+- Banners informativos sobre a precisão da IA
+- Exportação das bibliografias corrigidas
 
 ## Estrutura do Projeto
 
@@ -21,6 +35,9 @@ Este projeto é composto por duas partes principais:
 - Next.js
 - React
 - TailwindCSS
+- Framer Motion (para animações avançadas)
+- Headless UI (para componentes acessíveis)
+- SVG animados (para elementos visuais interativos)
 - Axios
 
 ## Pré-requisitos
@@ -77,6 +94,15 @@ O backend estará disponível em: http://localhost:5000
 ## API Endpoints
 
 - `POST /api/bibliography/correct`: Corrige a bibliografia enviada
+- `POST /api/feedback`: Envia feedback do usuário sobre os resultados
+
+## Design e UX
+
+- Tema escuro com destaque em tons de rosa, laranja e amarelo
+- Elementos animados para melhor engajamento
+- Layout responsivo para todos os tamanhos de tela
+- Banners informativos sobre limitações da IA e período promocional
+- Ícones animados para feedback visual das ações
 
 ## Contribuindo
 

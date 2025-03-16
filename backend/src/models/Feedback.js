@@ -111,28 +111,14 @@ feedbackSchema.statics.getRatingDistribution = async function() {
   }
 };
 
-// Método para obter estatísticas completas de feedback
+/**
+ * Método estático para obter estatísticas de feedback
+ * @returns {Promise<Object>} - Estatísticas de feedback
+ */
 feedbackSchema.statics.getFeedbackStats = async function() {
   try {
-    logger.debug('Obtendo estatísticas completas de feedback');
-    
-    const averageData = await this.calculateAverageRating();
-    const distribution = await this.getRatingDistribution();
-    
-    // Calcular estatísticas adicionais
-    const recentFeedbacks = await this.find()
-      .select('rating comment createdAt')
-      .sort({ createdAt: -1 })
-      .limit(5);
-    
-    logger.debug('Estatísticas de feedback obtidas com sucesso');
-    
-    return {
-      averageRating: averageData.averageRating,
-      feedbackCount: averageData.feedbackCount,
-      distribution,
-      recentFeedbacks
-    };
+    logger.debug('Obtendo estatísticas de feedback');
+    return await this.calculateAverageRating();
   } catch (error) {
     logger.logDBError('getFeedbackStats', error, 'Feedback');
     throw error;

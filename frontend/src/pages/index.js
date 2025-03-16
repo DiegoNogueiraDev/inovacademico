@@ -11,12 +11,16 @@ import HistoryDrawer from '../components/HistoryDrawer';
 import FeedbackDialog from '../components/FeedbackDialog';
 import StatsCounter from '../components/StatsCounter';
 import historyService from '../services/historyService';
+import apiService from '../services/apiService';
+import Link from 'next/link';
 
 export default function Home() {
   const [correctionResult, setCorrectionResult] = useState(null);
   const [originalBibliography, setOriginalBibliography] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [message, setMessage] = useState({ type: '', text: '' });
+  const [showAlert, setShowAlert] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
   const [bibliographyInput, setBibliographyInput] = useState('');
   const [showHistoryDrawer, setShowHistoryDrawer] = useState(false);
@@ -32,6 +36,17 @@ export default function Home() {
       }
     }
   }, []);
+
+  // Efeito para mostrar e esconder alertas automaticamente
+  useEffect(() => {
+    if (message.text || error) {
+      setShowAlert(true);
+      const timer = setTimeout(() => {
+        setShowAlert(false);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [message, error]);
 
   const handleCorrectionResult = (result) => {
     if (result.original) {
@@ -50,6 +65,13 @@ export default function Home() {
     
     // Save to history
     historyService.saveToHistory(fullResult);
+    
+    // Mostrar mensagem de sucesso
+    setMessage({
+      type: 'success',
+      text: 'Bibliografia corrigida com sucesso!'
+    });
+    setError(null);
   };
 
   const handleHistoryItemSelect = (item) => {
@@ -72,6 +94,74 @@ export default function Home() {
 
   const handleClearHistory = () => {
     historyService.clearHistory();
+    setMessage({
+      type: 'success',
+      text: 'Histórico limpo com sucesso!'
+    });
+  };
+
+  // Função para renderizar alerta estilizado
+  const renderAlert = () => {
+    if ((!message.text && !error) || !showAlert) return null;
+    
+    const isSuccess = message.type === 'success';
+    const alertText = error || message.text;
+    const baseClasses = "fixed top-6 right-6 z-50 shadow-xl rounded-lg p-4 flex items-center transform transition-all duration-500";
+    const colorClasses = isSuccess 
+      ? "bg-gradient-to-r from-rose-600/90 to-rose-800/90 border-l-4 border-rose-400 text-white"
+      : "bg-gradient-to-r from-red-600/90 to-red-800/90 border-l-4 border-red-400 text-white";
+    const translateClass = showAlert ? "translate-x-0 opacity-100" : "translate-x-full opacity-0";
+    
+    const iconSuccess = (
+      <div className="h-10 w-10 rounded-full bg-white/20 flex items-center justify-center mr-3 flex-shrink-0">
+        <img src="/check-animated.svg" alt="Sucesso" className="h-6 w-6" />
+      </div>
+    );
+    
+    const iconError = (
+      <div className="h-10 w-10 rounded-full bg-white/20 flex items-center justify-center mr-3 flex-shrink-0">
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
+            <animate 
+              attributeName="stroke-dasharray" 
+              values="1, 150; 90, 150; 90, 150" 
+              dur="1.5s" 
+              repeatCount="1" 
+            />
+            <animate 
+              attributeName="stroke-dashoffset" 
+              values="0; -35; -35" 
+              dur="1.5s" 
+              repeatCount="1" 
+            />
+          </path>
+          <animateTransform 
+            attributeName="transform"
+            type="rotate"
+            from="0 12 12"
+            to="360 12 12"
+            dur="0.5s"
+            repeatCount="1"
+          />
+        </svg>
+      </div>
+    );
+    
+    return (
+      <div className={`${baseClasses} ${colorClasses} ${translateClass}`}>
+        {isSuccess ? iconSuccess : iconError}
+        <div>
+          <h4 className="font-medium text-white">{isSuccess ? "Sucesso!" : "Erro"}</h4>
+          <p className="text-sm text-gray-100">{alertText}</p>
+        </div>
+        <button 
+          className="ml-auto bg-white/10 rounded-full p-1 hover:bg-white/20 transition-colors"
+          onClick={() => setShowAlert(false)}
+        >
+          <img src="/close-animated.svg" alt="Fechar" className="h-5 w-5" />
+        </button>
+      </div>
+    );
   };
 
   return (
@@ -79,10 +169,13 @@ export default function Home() {
       <Head>
         <title>InovAcadêmico - Correção de Bibliografias</title>
         <meta name="description" content="Ferramenta para correção de bibliografias acadêmicas usando IA" />
-        <link rel="icon" href="/favicon.ico" />
+        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="true" />
       </Head>
+
+      {/* Alerta flutuante personalizado */}
+      {renderAlert()}
 
       <div className="absolute top-0 right-0 w-full h-full overflow-hidden pointer-events-none z-0">
         <div className="absolute top-10 right-10 w-20 h-20 bg-rose-500 rounded-full filter blur-3xl opacity-10 animate-pulse"></div>
@@ -94,144 +187,7 @@ export default function Home() {
         <div className="container mx-auto px-4 py-6 flex justify-between items-center">
           <div className="flex items-center">
             <div className="relative w-24 h-24 mr-4">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 280" className="w-full h-full">
-                <defs>
-                  <linearGradient id="capGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#e11d48" />
-                    <stop offset="100%" stopColor="#f97316" />
-                  </linearGradient>
-                  <linearGradient id="tasselGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#ffd700" />
-                    <stop offset="100%" stopColor="#ffa500" />
-                  </linearGradient>
-                  <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
-                    <feGaussianBlur stdDeviation="4" result="blur" />
-                    <feFlood floodColor="#e11d48" floodOpacity="0.3" result="color" />
-                    <feComposite in="color" in2="blur" operator="in" result="glow" />
-                    <feMerge>
-                      <feMergeNode in="glow" />
-                      <feMergeNode in="SourceGraphic" />
-                    </feMerge>
-                  </filter>
-                </defs>
-                
-                {/* Base Group */}
-                <g transform="translate(140, 140)">
-                  {/* Cap top (square platform) */}
-                  <path 
-                    d="M-60,-25 L0,-60 L60,-25 L0,10 Z" 
-                    fill="url(#capGradient)" 
-                    filter="url(#glow)"
-                    className="drop-shadow-lg"
-                  >
-                    <animate 
-                      attributeName="d" 
-                      values="M-60,-25 L0,-60 L60,-25 L0,10 Z;
-                             M-58,-28 L0,-63 L58,-28 L0,7 Z;
-                             M-60,-25 L0,-60 L60,-25 L0,10 Z" 
-                      dur="4s" 
-                      repeatCount="indefinite" 
-                      calcMode="spline"
-                      keySplines="0.5 0 0.5 1; 0.5 0 0.5 1"/>
-                  </path>
-                  
-                  {/* Cap bottom (cylinder) */}
-                  <path 
-                    d="M-40,0 L-40,30 L40,30 L40,0 C40,15 -40,15 -40,0 Z" 
-                    fill="#be123c" 
-                    filter="url(#glow)"
-                  >
-                    <animate 
-                      attributeName="d" 
-                      values="M-40,0 L-40,30 L40,30 L40,0 C40,15 -40,15 -40,0 Z;
-                             M-38,2 L-38,32 L38,32 L38,2 C38,17 -38,17 -38,2 Z;
-                             M-40,0 L-40,30 L40,30 L40,0 C40,15 -40,15 -40,0 Z" 
-                      dur="4s" 
-                      repeatCount="indefinite" 
-                      calcMode="spline"
-                      keySplines="0.5 0 0.5 1; 0.5 0 0.5 1"/>
-                  </path>
-                  
-                  {/* Button on top */}
-                  <circle cx="0" cy="-25" r="6" fill="#ffa500">
-                    <animate 
-                      attributeName="cy" 
-                      values="-25;-28;-25" 
-                      dur="4s" 
-                      repeatCount="indefinite" 
-                      calcMode="spline"
-                      keySplines="0.5 0 0.5 1; 0.5 0 0.5 1"/>
-                  </circle>
-                  
-                  {/* Tassel */}
-                  <g>
-                    {/* Tassel string */}
-                    <path 
-                      d="M0,-25 C-15,0 -25,25 -30,50" 
-                      stroke="url(#tasselGradient)" 
-                      strokeWidth="3" 
-                      fill="none" 
-                      strokeLinecap="round"
-                    >
-                      <animate 
-                        attributeName="d" 
-                        values="M0,-25 C-15,0 -25,25 -30,50;
-                               M0,-25 C-10,0 -20,25 -25,50;
-                               M0,-25 C-15,0 -25,25 -30,50" 
-                        dur="4s" 
-                        repeatCount="indefinite"
-                        calcMode="spline"
-                        keySplines="0.5 0 0.5 1; 0.5 0 0.5 1"/>
-                    </path>
-                    
-                    {/* Tassel end */}
-                    <g transform="translate(-30, 50)">
-                      <animateTransform 
-                        attributeName="transform" 
-                        type="translate" 
-                        values="-30,50; -25,50; -30,50" 
-                        dur="4s" 
-                        repeatCount="indefinite"
-                        calcMode="spline"
-                        keySplines="0.5 0 0.5 1; 0.5 0 0.5 1"/>
-                        
-                      <path 
-                        d="M-5,0 C-5,5 -5,10 5,15 C-2,20 -5,25 0,30 C5,25 10,20 15,25 C15,20 15,15 10,10 C5,5 -5,5 -5,0 Z" 
-                        fill="url(#tasselGradient)"
-                      >
-                        <animateTransform 
-                          attributeName="transform" 
-                          type="rotate" 
-                          from="0 0 0" 
-                          to="360 0 0" 
-                          dur="10s" 
-                          repeatCount="indefinite"/>
-                      </path>
-                    </g>
-                  </g>
-                </g>
-                
-                {/* Decorative floating particles */}
-                <circle cx="50" cy="70" r="3" fill="#ec4899" opacity="0.8">
-                  <animate attributeName="cy" values="70;60;70" dur="4s" repeatCount="indefinite" calcMode="spline" keySplines="0.5 0 0.5 1; 0.5 0 0.5 1"/>
-                  <animate attributeName="opacity" values="0.8;0.3;0.8" dur="4s" repeatCount="indefinite" calcMode="spline" keySplines="0.5 0 0.5 1; 0.5 0 0.5 1"/>
-                </circle>
-                
-                <circle cx="220" cy="100" r="4" fill="#f97316" opacity="0.8">
-                  <animate attributeName="cy" values="100;85;100" dur="5s" repeatCount="indefinite" calcMode="spline" keySplines="0.5 0 0.5 1; 0.5 0 0.5 1"/>
-                  <animate attributeName="opacity" values="0.8;0.4;0.8" dur="5s" repeatCount="indefinite" calcMode="spline" keySplines="0.5 0 0.5 1; 0.5 0 0.5 1"/>
-                </circle>
-                
-                <circle cx="180" cy="210" r="3" fill="#ec4899" opacity="0.7">
-                  <animate attributeName="cy" values="210;195;210" dur="4.5s" repeatCount="indefinite" calcMode="spline" keySplines="0.5 0 0.5 1; 0.5 0 0.5 1"/>
-                  <animate attributeName="opacity" values="0.7;0.3;0.7" dur="4.5s" repeatCount="indefinite" calcMode="spline" keySplines="0.5 0 0.5 1; 0.5 0 0.5 1"/>
-                </circle>
-                
-                <circle cx="90" cy="240" r="4" fill="#ffd700" opacity="0.6">
-                  <animate attributeName="cy" values="240;225;240" dur="5.5s" repeatCount="indefinite" calcMode="spline" keySplines="0.5 0 0.5 1; 0.5 0 0.5 1"/>
-                  <animate attributeName="opacity" values="0.6;0.2;0.6" dur="5.5s" repeatCount="indefinite" calcMode="spline" keySplines="0.5 0 0.5 1; 0.5 0 0.5 1"/>
-                </circle>
-              </svg>
+              <img src="/graduation-cap-theme.svg" alt="InovAcadêmico Logo" className="w-full h-full" />
             </div>
             <div>
               <h1 className="text-3xl font-bold text-white tracking-tight">InovAcadêmico</h1>
@@ -260,29 +216,21 @@ export default function Home() {
                   </button>
                 </li>
                 <li>
-                  <a 
-                    href="#" 
+                  <Link
+                    href="/sobre" 
                     className="text-gray-300 hover:text-rose-300 text-sm font-medium flex items-center transition-colors"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      alert('Funcionalidade em breve!');
-                    }}
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <circle cx="12" cy="12" r="10"></circle>
                       <path d="M12 16v-4M12 8h.01"></path>
                     </svg>
                     Sobre
-                  </a>
+                  </Link>
                 </li>
                 <li>
-                  <a 
-                    href="#" 
+                  <Link 
+                    href="/ajuda" 
                     className="text-gray-300 hover:text-rose-300 text-sm font-medium flex items-center transition-colors"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      alert('Funcionalidade em breve!');
-                    }}
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <circle cx="12" cy="12" r="10"></circle>
@@ -290,7 +238,7 @@ export default function Home() {
                       <line x1="12" y1="17" x2="12.01" y2="17"></line>
                     </svg>
                     Ajuda
-                  </a>
+                  </Link>
                 </li>
               </ul>
             </nav>
@@ -301,6 +249,24 @@ export default function Home() {
           <StatsCounter />
         </div>
       </header>
+
+      {/* Banner promocional */}
+      <div className="relative z-10 bg-gradient-to-r from-rose-600/90 via-orange-500/90 to-rose-600/90 shadow-lg text-white py-3 animate-pulse">
+        <div className="container mx-auto px-4 text-center">
+          <div className="flex flex-col md:flex-row items-center justify-center space-y-2 md:space-y-0 md:space-x-3">
+            <span className="bg-white/20 text-white text-xs font-bold px-2.5 py-1 rounded-full animate-bounce">
+              NOVO
+            </span>
+            <h3 className="text-lg md:text-xl font-bold tracking-wider">
+              TUDO DE GRAÇA POR TEMPO LIMITADO
+            </h3>
+            <div className="hidden md:block h-4 w-0.5 bg-white/40 rounded-full mx-2"></div>
+            <p className="text-sm md:text-base">
+              Aproveite todas as funcionalidades sem custo durante o período promocional!
+            </p>
+          </div>
+        </div>
+      </div>
 
       <main className="container mx-auto px-4 py-12 relative z-10">
         <div className="text-center mb-12">
@@ -318,7 +284,10 @@ export default function Home() {
           <BibliographyForm 
             onCorrectionResult={handleCorrectionResult} 
             setIsLoading={setIsLoading}
-            setError={setError}
+            setError={(errorMsg) => {
+              setError(errorMsg);
+              setMessage({ type: 'error', text: '' });
+            }}
             initialValue={bibliographyInput}
             setInputValue={setBibliographyInput}
           />
@@ -330,17 +299,20 @@ export default function Home() {
           </div>
         )}
 
-        {error && (
-          <div className="max-w-3xl mx-auto bg-red-900/80 backdrop-blur-sm text-white p-6 rounded-xl border border-red-700 mb-8 shadow-lg">
-            <h3 className="font-bold flex items-center">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="10"></circle>
-                <line x1="12" y1="8" x2="12" y2="12"></line>
-                <line x1="12" y1="16" x2="12.01" y2="16"></line>
-              </svg>
-              Erro:
-            </h3>
-            <p className="mt-2">{error}</p>
+        {/* Substitundo o bloco de erro antigo pelo alerta inline melhorado */}
+        {error && !showAlert && (
+          <div className="max-w-3xl mx-auto bg-gradient-to-r from-red-900/50 to-red-800/30 backdrop-blur-sm text-white p-4 rounded-xl border border-red-700 mb-8 shadow-lg">
+            <div className="flex items-center">
+              <div className="h-8 w-8 rounded-full bg-red-500/20 flex items-center justify-center mr-3 flex-shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-red-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div>
+                <h4 className="font-medium">Erro</h4>
+                <p className="text-sm opacity-90">{error}</p>
+              </div>
+            </div>
           </div>
         )}
 
@@ -350,7 +322,10 @@ export default function Home() {
             onRequestFeedback={handleRequestFeedback}
             onSaveToHistory={() => {
               // Já está sendo salvo automaticamente, mas poderia ser usado para salvar novamente
-              alert('Bibliografia salva no histórico!');
+              setMessage({
+                type: 'success',
+                text: 'Bibliografia salva no histórico!'
+              });
             }}
           />
         )}
@@ -360,8 +335,18 @@ export default function Home() {
         <div className="container mx-auto px-4">
           <p className="font-medium">© {new Date().getFullYear()} InovAcadêmico - Tecnologia para pesquisa acadêmica</p>
           <div className="mt-3 text-sm flex justify-center space-x-6">
-            <a href="#" className="hover:text-rose-300 transition-colors">Termos de Uso</a>
-            <a href="#" className="hover:text-rose-300 transition-colors">Política de Privacidade</a>
+            <Link href="/termos-de-uso" className="hover:text-rose-300 transition-colors">
+              Termos de Uso
+            </Link>
+            <Link href="/politica-de-privacidade" className="hover:text-rose-300 transition-colors">
+              Política de Privacidade
+            </Link>
+            <Link href="/sobre" className="hover:text-rose-300 transition-colors">
+              Sobre
+            </Link>
+            <Link href="/ajuda" className="hover:text-rose-300 transition-colors">
+              Ajuda
+            </Link>
           </div>
         </div>
       </footer>
@@ -382,9 +367,32 @@ export default function Home() {
         <FeedbackDialog 
           isOpen={showFeedback}
           onClose={handleCloseFeedback}
-          onSubmit={(feedback) => {
+          onSubmit={async (feedback) => {
             console.log('Feedback enviado:', feedback);
-            return Promise.resolve();
+            
+            // Adicionar os dados da bibliografia ao feedback
+            const feedbackData = {
+              ...feedback,
+              original: correctionResult?.original || '',
+              corrected: correctionResult?.corrected || ''
+            };
+            
+            // Enviar para a API
+            try {
+              const result = await apiService.submitFeedback(feedbackData);
+              setMessage({
+                type: 'success',
+                text: 'Feedback enviado com sucesso! Obrigado pela sua contribuição.'
+              });
+              return result;
+            } catch (error) {
+              console.error('Erro ao enviar feedback:', error);
+              setMessage({
+                type: 'error',
+                text: 'Ocorreu um erro ao enviar o feedback. Tente novamente.'
+              });
+              throw error;
+            }
           }}
         />
       )}

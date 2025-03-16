@@ -209,20 +209,50 @@ const apiService = {
    */
   async submitFeedback(feedback) {
     try {
-      logger.info('Enviando feedback de correção', { rating: feedback.rating });
+      // Validar os dados antes de enviar
+      if (!feedback.rating || feedback.rating < 1 || feedback.rating > 5) {
+        logger.warn('Tentativa de enviar feedback com avaliação inválida', { rating: feedback.rating });
+        throw new Error('A avaliação deve estar entre 1 e 5');
+      }
+      
+      if (!feedback.original || !feedback.corrected) {
+        logger.warn('Tentativa de enviar feedback sem textos de bibliografia', { 
+          hasOriginal: !!feedback.original, 
+          hasCorrected: !!feedback.corrected 
+        });
+        throw new Error('Os textos de bibliografia original e corrigida são obrigatórios');
+      }
+      
+      logger.info('Enviando feedback de correção', { 
+        rating: feedback.rating,
+        hasComment: !!feedback.comment,
+        originalLength: feedback.original.length,
+        correctedLength: feedback.corrected.length
+      });
       
       const response = await axios.post(`${API_URL}/bibliography/feedback`, feedback);
       
       if (response.data && response.data.success) {
+        logger.info('Feedback enviado com sucesso', { 
+          rating: feedback.rating,
+          responseData: response.data
+        });
         logger.userAction('feedback_submitted', { rating: feedback.rating });
         return response.data;
       }
       
-      logger.warn('Falha ao enviar feedback - sucesso:false', { response: response.data });
-      throw new Error('Failed to submit feedback');
+      logger.warn('Falha ao enviar feedback - sucesso:false', { 
+        response: response.data,
+        statusCode: response.status
+      });
+      throw new Error('Falha ao enviar feedback: ' + (response.data.message || 'Erro desconhecido'));
     } catch (error) {
-      logger.error('Erro na API ao enviar feedback:', error);
-      throw new Error('Erro ao enviar feedback');
+      logger.error('Erro na API ao enviar feedback:', { 
+        error: error.message,
+        status: error.response?.status,
+        responseData: error.response?.data
+      });
+      throw new Error('Erro ao enviar feedback: ' + error.message);
     }
   },
 

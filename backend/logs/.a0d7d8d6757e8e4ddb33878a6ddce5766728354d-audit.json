@@ -9,6 +9,11 @@
             "date": 1742091351140,
             "name": "/home/diego/Projetos/inovacademico/backend/logs/inovacademico-error-2025-03-15.log",
             "hash": "f0d254dff1d5476cdfae0e58db2cca440a06f5bfafa05a0abde2a267e93cffa7"
+        },
+        {
+            "date": 1742094375269,
+            "name": "/home/diego/Projetos/inovacademico/backend/logs/inovacademico-error-2025-03-16.log",
+            "hash": "7af5ec1f6ce72c71ccdba8e2c46725cd2776739791ee45eabb625152cf08212c"
         }
     ],
     "hashType": "sha256"
