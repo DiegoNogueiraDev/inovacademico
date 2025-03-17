@@ -6,6 +6,10 @@ import { useState, useRef, useEffect } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
+import Header from './components/Header';
+import Footer from './components/Footer';
+import InfoBanner from './components/InfoBanner';
+import ModalAlert from './components/ModalAlert';
 
 export default function ImportarReferencias() {
   const router = useRouter();
@@ -21,6 +25,13 @@ export default function ImportarReferencias() {
   const [fileError, setFileError] = useState('');
   const [preservarHTML, setPreservarHTML] = useState(true);
   const textareaRef = useRef(null);
+  
+  // Modal para substituir alerts
+  const [modalAlert, setModalAlert] = useState({ 
+    isOpen: false,
+    message: '',
+    type: 'info'
+  });
 
   useEffect(() => {
     if (message.text) {
@@ -31,6 +42,23 @@ export default function ImportarReferencias() {
       return () => clearTimeout(timer);
     }
   }, [message]);
+
+  // Função para mostrar modal no lugar de alert
+  const showModal = (message, type = 'info') => {
+    setModalAlert({
+      isOpen: true,
+      message,
+      type
+    });
+  };
+  
+  // Fechar modal
+  const closeModal = () => {
+    setModalAlert(prev => ({
+      ...prev,
+      isOpen: false
+    }));
+  };
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -113,15 +141,15 @@ export default function ImportarReferencias() {
         
         // Criar FormData para enviar arquivo
         const formData = new FormData();
-        formData.append('arquivo', arquivo);
+        formData.append('file', arquivo); // Alterado para 'file' para corresponder ao backend
         formData.append('formato', formato);
-        formData.append('preservarHTML', preservarHTML);
+        formData.append('preservarHTML', preservarHTML ? 'true' : 'false');
         
-        endpoint = '/api/referencias/importar/arquivo';
+        endpoint = '/api/references/upload'; // Usando a rota correta
         dadosParaEnviar = formData;
       } else {
         // Processar texto
-        endpoint = '/api/referencias/importar/texto';
+        endpoint = '/api/references/import-json'; // Usando a rota correta
         dadosParaEnviar = {
           texto,
           formato,
@@ -132,14 +160,14 @@ export default function ImportarReferencias() {
       // Fazer requisição à API
       const opcoes = {
         method: 'POST',
-        headers: {},
         // Não definir Content-Type para FormData, o navegador faz isso automaticamente
-        // com o boundary correto. Para JSON, definimos abaixo.
       };
       
       // Se não for FormData, converter para JSON
       if (activeTab === 'texto') {
-        opcoes.headers['Content-Type'] = 'application/json';
+        opcoes.headers = {
+          'Content-Type': 'application/json'
+        };
         opcoes.body = JSON.stringify(dadosParaEnviar);
       } else {
         opcoes.body = dadosParaEnviar;
@@ -149,7 +177,7 @@ export default function ImportarReferencias() {
       
       if (!resposta.ok) {
         const erro = await resposta.json();
-        throw new Error(erro.mensagem || 'Erro ao importar referências');
+        throw new Error(erro.message || 'Erro ao importar referências');
       }
       
       const resultado = await resposta.json();
@@ -158,9 +186,17 @@ export default function ImportarReferencias() {
       setMessage({
         type: 'success',
         text: activeTab === 'upload' 
-          ? `${fileName} importado com sucesso! ${resultado.importadas} referências adicionadas.` 
-          : `Referências importadas com sucesso! ${resultado.importadas} referências adicionadas.`
+          ? `${fileName} importado com sucesso! ${resultado.importadas || resultado.data?.length || 0} referências adicionadas.` 
+          : `Referências importadas com sucesso! ${resultado.importadas || resultado.data?.length || 0} referências adicionadas.`
       });
+      
+      // Mostrar modal de sucesso
+      showModal(
+        activeTab === 'upload' 
+          ? `${fileName} importado com sucesso! ${resultado.importadas || resultado.data?.length || 0} referências adicionadas.` 
+          : `Referências importadas com sucesso! ${resultado.importadas || resultado.data?.length || 0} referências adicionadas.`,
+        'success'
+      );
       
       // Limpar formulário
       if (activeTab === 'texto') {
@@ -176,6 +212,12 @@ export default function ImportarReferencias() {
         type: 'error',
         text: error.message || 'Erro ao importar referências. Verifique o formato e tente novamente.'
       });
+      
+      // Mostrar modal de erro
+      showModal(
+        error.message || 'Erro ao importar referências. Verifique o formato e tente novamente.',
+        'error'
+      );
     } finally {
       setIsSubmitting(false);
       setShowAlert(true);
@@ -231,120 +273,30 @@ export default function ImportarReferencias() {
     }, 10);
   };
 
-  // Função auxiliar para renderizar o alerta com o tema da aplicação
-  const renderAlert = () => {
-    if (!message.text) return null;
-    
-    const isSuccess = message.type === 'success';
-    const baseClasses = "fixed top-6 right-6 z-50 shadow-xl rounded-lg p-4 flex items-center transform transition-all duration-500";
-    const colorClasses = isSuccess 
-      ? "bg-gradient-to-r from-rose-600/90 to-rose-800/90 border-l-4 border-rose-400 text-white"
-      : "bg-gradient-to-r from-red-600/90 to-red-800/90 border-l-4 border-red-400 text-white";
-    const translateClass = showAlert ? "translate-x-0 opacity-100" : "translate-x-full opacity-0";
-    
-    const iconSuccess = (
-      <div className="h-10 w-10 rounded-full bg-white/20 flex items-center justify-center mr-3 flex-shrink-0">
-        <img src="/check-animated.svg" alt="Sucesso" className="h-6 w-6" />
-      </div>
-    );
-    
-    const iconError = (
-      <div className="h-10 w-10 rounded-full bg-white/20 flex items-center justify-center mr-3 flex-shrink-0">
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
-            <animate 
-              attributeName="stroke-dasharray" 
-              values="1, 150; 90, 150; 90, 150" 
-              dur="1.5s" 
-              repeatCount="1" 
-            />
-            <animate 
-              attributeName="stroke-dashoffset" 
-              values="0; -35; -35" 
-              dur="1.5s" 
-              repeatCount="1" 
-            />
-          </path>
-          <animateTransform 
-            attributeName="transform"
-            type="rotate"
-            from="0 12 12"
-            to="360 12 12"
-            dur="0.5s"
-            repeatCount="1"
-          />
-        </svg>
-      </div>
-    );
-    
-    return (
-      <div className={`${baseClasses} ${colorClasses} ${translateClass}`}>
-        {isSuccess ? iconSuccess : iconError}
-        <div>
-          <h4 className="font-medium text-white">{isSuccess ? "Sucesso!" : "Erro"}</h4>
-          <p className="text-sm text-gray-100">{message.text}</p>
-        </div>
-        <button 
-          className="ml-auto bg-white/10 rounded-full p-1 hover:bg-white/20 transition-colors"
-          onClick={() => setShowAlert(false)}
-        >
-          <img src="/close-animated.svg" alt="Fechar" className="h-5 w-5" />
-        </button>
-      </div>
-    );
-  };
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-950 to-gray-900">
+    <div className="min-h-screen bg-gray-900 text-white flex flex-col">
       <Head>
         <title>Importar Referências - InovAcadêmico</title>
-        <meta name="description" content="Importe referências bibliográficas em lote no InovAcadêmico" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+        <meta name="description" content="Importe referências bibliográficas em diversos formatos" />
+        <link rel="icon" href="/favicon.ico" />
       </Head>
-
-      {/* Alerta personalizado */}
-      {renderAlert()}
-
-      {/* Banner informativo - Melhorado para responsividade */}
-      {showBanner && (
-        <div className="relative bg-gradient-to-r from-rose-900/80 via-gray-800/90 to-gray-900/80 text-white py-3 px-4 shadow-md">
-          <div className="container mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between">
-            <div className="flex items-start sm:items-center mb-3 sm:mb-0 pr-8 sm:pr-0">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-rose-300 mr-2 flex-shrink-0 mt-0.5 sm:mt-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <p className="text-xs sm:text-sm">
-                <span className="font-medium">Você pode usar o chatGPT ou outra, mas nenhuma é 100% precisa</span>, por isso, estamos convidando você a ajudar a gente a melhorar cada vez mais. Cadastre suas referências em nossa plataforma e usaremos elas como base para aprimorar o nosso modelo.
-              </p>
-            </div>
-            <button 
-              onClick={() => setShowBanner(false)} 
-              className="absolute top-3 right-4 sm:static bg-rose-800/40 hover:bg-rose-800/60 rounded-full p-1 transition-colors"
-            >
-              <img src="/close-animated.svg" alt="Fechar" className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Header simplificado */}
-      <header className="relative z-10 bg-gradient-to-r from-rose-900/80 to-gray-900/80 backdrop-blur-md shadow-lg border-b border-rose-900/30">
-        <div className="container mx-auto px-4 py-3 sm:py-4">
-          <Link href="/" className="flex items-center">
-            <div className="w-10 h-10 sm:w-12 sm:h-12 mr-2 sm:mr-3">
-              <img src="/graduation-cap-theme.svg" alt="InovAcadêmico Logo" className="w-full h-full" />
-            </div>
-            <div>
-              <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">InovAcadêmico</h1>
-              <div className="relative">
-                <p className="text-rose-400 text-xs font-medium">Correção de bibliografias</p>
-              </div>
-            </div>
-          </Link>
-        </div>
-      </header>
-
+      
+      {/* Componentes de Header, InfoBanner, etc. */}
+      <InfoBanner 
+        title="Importação de Referências" 
+        description="Importe múltiplas referências de uma só vez usando arquivos BibTeX, RIS, JSON ou texto"
+      />
+      
+      <Header />
+      
+      {/* Modal para substituir alert() */}
+      <ModalAlert 
+        isOpen={modalAlert.isOpen}
+        onClose={closeModal}
+        message={modalAlert.message}
+        type={modalAlert.type}
+      />
+      
       <main className="container mx-auto px-3 sm:px-4 py-6 sm:py-8 md:py-12 relative z-10">
         <div className="max-w-4xl mx-auto bg-gray-800/50 backdrop-blur-sm rounded-xl shadow-xl border border-gray-700/50 p-4 sm:p-6 md:p-8">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 sm:mb-8">
@@ -943,25 +895,7 @@ export default function ImportarReferencias() {
         </div>
       </main>
 
-      <footer className="bg-gradient-to-r from-rose-900/80 to-gray-900/80 backdrop-blur-md py-4 sm:py-6 text-center text-gray-400 mt-8 sm:mt-12 border-t border-rose-900/30 relative z-10">
-        <div className="container mx-auto px-4">
-          <p className="font-medium text-sm sm:text-base">© {new Date().getFullYear()} InovAcadêmico - Tecnologia para pesquisa acadêmica</p>
-          <div className="mt-2 sm:mt-3 text-xs sm:text-sm flex flex-wrap justify-center gap-3 sm:gap-6">
-            <Link href="/termos-de-uso" className="hover:text-rose-300 transition-colors">
-              Termos de Uso
-            </Link>
-            <Link href="/politica-de-privacidade" className="hover:text-rose-300 transition-colors">
-              Política de Privacidade
-            </Link>
-            <Link href="/sobre" className="hover:text-rose-300 transition-colors">
-              Sobre
-            </Link>
-            <Link href="/ajuda" className="hover:text-rose-300 transition-colors">
-              Ajuda
-            </Link>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 } 

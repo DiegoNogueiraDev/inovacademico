@@ -202,7 +202,16 @@ const Referencias = () => {
                         Ver Detalhes
                       </Link>
                       <Link 
-                        href={`/referencias/citar/${referencia._id}`}
+                        href={`/referencias/detalhes/${referencia._id}?modo=editar`}
+                        className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm rounded-lg transition-colors duration-200 whitespace-nowrap flex items-center"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                        </svg>
+                        Editar
+                      </Link>
+                      <Link 
+                        href={`/referencias/detalhes/${referencia._id}?modo=citar`}
                         className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm rounded-lg transition-colors duration-200 whitespace-nowrap flex items-center"
                       >
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -216,32 +225,6 @@ const Referencias = () => {
               ))}
             </div>
           )}
-          
-          <div className="mt-8 text-center">
-            <div className="flex flex-col sm:flex-row justify-center gap-4">
-              <Link 
-                href="/referencias/adicionar"
-                className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg transition-colors duration-200 inline-flex items-center justify-center"
-                title="Adicionar uma nova referência bibliográfica"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-                Adicionar Nova Referência
-              </Link>
-              
-              <Link 
-                href="/referencias/importar"
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200 inline-flex items-center justify-center"
-                title="Importar múltiplas referências de uma só vez"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
-                </svg>
-                Importar Múltiplas Referências
-              </Link>
-            </div>
-          </div>
         </div>
         
         {/* Informações adicionais sobre referências */}

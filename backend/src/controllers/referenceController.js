@@ -255,26 +255,57 @@ const referenceController = {
       }
       
       const style = req.body.style || 'abnt';
+      const formato = req.body.formato || 'auto';
+      const preservarHTML = req.body.preservarHTML === 'true';
       
       logger.info('Processando arquivo de referências', {
         filename: req.file.originalname,
         size: req.file.size,
-        style
+        style,
+        formato,
+        preservarHTML
       });
       
-      // Verificar extensão do arquivo
-      const fileExt = req.file.originalname.split('.').pop().toLowerCase();
+      // Verificar formato solicitado ou detectar pela extensão do arquivo
+      let formatoDetectado = formato;
+      if (formato === 'auto') {
+        const fileExt = req.file.originalname.split('.').pop().toLowerCase();
+        if (fileExt === 'csv') formatoDetectado = 'csv';
+        else if (fileExt === 'json') formatoDetectado = 'json';
+        else if (fileExt === 'bib') formatoDetectado = 'bibtex';
+        else if (fileExt === 'ris') formatoDetectado = 'ris';
+        else if (fileExt === 'html' || fileExt === 'htm') formatoDetectado = 'html';
+        else formatoDetectado = 'plain'; // Default para txt e outros
+      }
       
-      if (fileExt === 'csv') {
-        return processCSVReferences(req, res, next, style);
-      } else if (fileExt === 'json') {
-        return processJSONReferences(req, res, next, style);
-      } else {
-        logger.warn('Formato de arquivo não suportado', { fileExt });
-        return res.status(400).json({
-          success: false,
-          message: 'Formato de arquivo não suportado. Envie arquivos CSV ou JSON.'
-        });
+      logger.debug(`Formato detectado: ${formatoDetectado}`);
+      
+      // Processar o arquivo de acordo com o formato
+      switch (formatoDetectado) {
+        case 'csv':
+          return processCSVReferences(req, res, next, style);
+          
+        case 'json':
+          return processJSONReferences(req, res, next, style);
+          
+        case 'bibtex':
+          return processBibTexReferences(req, res, next, style);
+          
+        case 'ris':
+          return processRISReferences(req, res, next, style);
+          
+        case 'html':
+          return processHTMLReferences(req, res, next, style, preservarHTML);
+          
+        case 'plain':
+          return processPlainTextReferences(req, res, next, style, preservarHTML);
+          
+        default:
+          logger.warn('Formato de arquivo não suportado', { formato: formatoDetectado });
+          return res.status(400).json({
+            success: false,
+            message: `Formato de arquivo não suportado: ${formatoDetectado}. Formatos suportados: CSV, JSON, BibTeX, RIS, HTML e texto.`
+          });
       }
     } catch (error) {
       logger.error('Erro ao processar upload de arquivo', { error });
@@ -583,6 +614,404 @@ async function validateReferenceByStyle(reference, style) {
     errors: [...errors, ...formatChecks],
     reference
   };
+}
+
+/**
+ * Processa arquivos HTML e extrai referências
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ * @param {String} style - Estilo de citação (abnt, apa, etc)
+ * @param {Boolean} preservarHTML - Se deve preservar formatação HTML
+ */
+async function processHTMLReferences(req, res, next, style, preservarHTML) {
+  try {
+    // Converter buffer para string
+    const htmlString = req.file.buffer.toString('utf8');
+    
+    logger.debug('Processando conteúdo HTML');
+    
+    // Extrair referências do HTML - cada <p> é considerado uma referência
+    const references = [];
+    
+    // Extrair parágrafos usando regex simples
+    const paragraphs = htmlString.match(/<p>.*?<\/p>/gs) || [];
+    
+    for (const paragraph of paragraphs) {
+      // Remover tags <p> e </p>
+      let cleanContent = paragraph.replace(/<p>/g, '').replace(/<\/p>/g, '');
+      
+      // Criar referência básica
+      const reference = {
+        style,
+        title: cleanContent,
+        formattedReference: preservarHTML ? paragraph : cleanContent,
+        importSource: 'html'
+      };
+      
+      references.push(reference);
+    }
+    
+    logger.info(`${references.length} referências extraídas do HTML`);
+    
+    // Salvar referências
+    if (references.length === 0) {
+      return res.status(200).json({
+        success: true,
+        message: 'Nenhuma referência encontrada no arquivo HTML',
+        stats: {
+          received: 0,
+          valid: 0,
+          saved: 0
+        }
+      });
+    }
+    
+    const savedReferences = await Reference.insertMany(references);
+    
+    return res.status(200).json({
+      success: true,
+      message: `${savedReferences.length} referências importadas com sucesso`,
+      stats: {
+        received: references.length,
+        valid: references.length,
+        saved: savedReferences.length
+      }
+    });
+  } catch (error) {
+    logger.error('Erro ao processar arquivo HTML', { error });
+    next(error);
+  }
+}
+
+/**
+ * Processa arquivos BibTeX e extrai referências
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ * @param {String} style - Estilo de citação (abnt, apa, etc)
+ */
+async function processBibTexReferences(req, res, next, style) {
+  try {
+    // Converter buffer para string
+    const bibtexString = req.file.buffer.toString('utf8');
+    
+    logger.debug('Processando conteúdo BibTeX');
+    
+    // Implementação básica para extrair entradas BibTeX
+    const references = [];
+    
+    // Extrair entradas usando regex
+    const entryPattern = /@(\w+)\s*\{\s*([^,]*),\s*([\s\S]*?)\}/g;
+    let match;
+    
+    while ((match = entryPattern.exec(bibtexString)) !== null) {
+      const entryType = match[1].toLowerCase(); // article, book, etc.
+      const citeKey = match[2].trim();
+      const entryContent = match[3];
+      
+      // Extrair campos
+      const fields = {};
+      const fieldPattern = /(\w+)\s*=\s*\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}/g;
+      let fieldMatch;
+      
+      while ((fieldMatch = fieldPattern.exec(entryContent)) !== null) {
+        fields[fieldMatch[1].toLowerCase()] = fieldMatch[2].trim();
+      }
+      
+      // Criar referência
+      const reference = {
+        style,
+        type: mapBibTexTypeToReferenceType(entryType),
+        title: fields.title || 'Sem título',
+        authors: fields.author || fields.editor || '',
+        year: fields.year || '',
+        publisher: fields.publisher || '',
+        journal: fields.journal || '',
+        volume: fields.volume || '',
+        issue: fields.number || '',
+        pages: fields.pages || '',
+        importSource: 'bibtex',
+        sourceKey: citeKey
+      };
+      
+      references.push(reference);
+    }
+    
+    logger.info(`${references.length} referências extraídas do BibTeX`);
+    
+    // Salvar referências
+    if (references.length === 0) {
+      return res.status(200).json({
+        success: true,
+        message: 'Nenhuma referência encontrada no arquivo BibTeX',
+        stats: {
+          received: 0,
+          valid: 0,
+          saved: 0
+        }
+      });
+    }
+    
+    const savedReferences = await Reference.insertMany(references);
+    
+    return res.status(200).json({
+      success: true,
+      message: `${savedReferences.length} referências importadas com sucesso`,
+      stats: {
+        received: references.length,
+        valid: references.length,
+        saved: savedReferences.length
+      }
+    });
+  } catch (error) {
+    logger.error('Erro ao processar arquivo BibTeX', { error });
+    next(error);
+  }
+}
+
+/**
+ * Processa arquivos RIS e extrai referências
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ * @param {String} style - Estilo de citação (abnt, apa, etc)
+ */
+async function processRISReferences(req, res, next, style) {
+  try {
+    // Converter buffer para string
+    const risString = req.file.buffer.toString('utf8');
+    
+    logger.debug('Processando conteúdo RIS');
+    
+    // Implementação básica para extrair entradas RIS
+    const references = [];
+    let currentReference = null;
+    
+    // Separar por linhas
+    const lines = risString.split(/\r?\n/);
+    
+    for (const line of lines) {
+      // Ignorar linhas vazias
+      if (!line.trim()) continue;
+      
+      // Verificar formato TAG  - CONTEÚDO
+      const match = line.match(/^([A-Z][A-Z0-9])  - (.*)$/);
+      if (!match) continue;
+      
+      const [, tag, content] = match;
+      
+      // Iniciar nova referência quando encontrar tipo
+      if (tag === 'TY') {
+        if (currentReference) {
+          references.push(currentReference);
+        }
+        currentReference = {
+          style,
+          type: mapRISTypeToReferenceType(content),
+          importSource: 'ris'
+        };
+      }
+      // Final da referência
+      else if (tag === 'ER') {
+        if (currentReference) {
+          references.push(currentReference);
+          currentReference = null;
+        }
+      }
+      // Outros campos
+      else if (currentReference) {
+        switch (tag) {
+          case 'TI': // Título
+            currentReference.title = content;
+            break;
+          case 'AU': // Autor
+            if (!currentReference.authors) {
+              currentReference.authors = content;
+            } else {
+              currentReference.authors += '; ' + content;
+            }
+            break;
+          case 'PY': // Ano
+          case 'Y1':
+            currentReference.year = content.replace(/\/.*$/, '');
+            break;
+          case 'PB': // Editora
+            currentReference.publisher = content;
+            break;
+          case 'JO': // Journal
+          case 'JF':
+          case 'JA':
+            currentReference.journal = content;
+            break;
+          case 'VL': // Volume
+            currentReference.volume = content;
+            break;
+          case 'IS': // Issue
+            currentReference.issue = content;
+            break;
+          case 'SP': // Start page
+            if (!currentReference.pages) {
+              currentReference.pages = content;
+            } else {
+              currentReference.pages = content + '-' + currentReference.pages;
+            }
+            break;
+          case 'EP': // End page
+            if (!currentReference.pages) {
+              currentReference.pages = '-' + content;
+            } else {
+              currentReference.pages = currentReference.pages.replace(/-.*$/, '-' + content);
+            }
+            break;
+        }
+      }
+    }
+    
+    // Adicionar última referência se existir
+    if (currentReference) {
+      references.push(currentReference);
+    }
+    
+    logger.info(`${references.length} referências extraídas do RIS`);
+    
+    // Salvar referências
+    if (references.length === 0) {
+      return res.status(200).json({
+        success: true,
+        message: 'Nenhuma referência encontrada no arquivo RIS',
+        stats: {
+          received: 0,
+          valid: 0,
+          saved: 0
+        }
+      });
+    }
+    
+    const savedReferences = await Reference.insertMany(references);
+    
+    return res.status(200).json({
+      success: true,
+      message: `${savedReferences.length} referências importadas com sucesso`,
+      stats: {
+        received: references.length,
+        valid: references.length,
+        saved: savedReferences.length
+      }
+    });
+  } catch (error) {
+    logger.error('Erro ao processar arquivo RIS', { error });
+    next(error);
+  }
+}
+
+/**
+ * Processa arquivos de texto plano e extrai referências
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ * @param {String} style - Estilo de citação (abnt, apa, etc)
+ * @param {Boolean} preservarHTML - Se deve preservar formatação HTML
+ */
+async function processPlainTextReferences(req, res, next, style, preservarHTML) {
+  try {
+    // Converter buffer para string
+    const textString = req.file.buffer.toString('utf8');
+    
+    logger.debug('Processando conteúdo de texto plano');
+    
+    // Separar por linhas vazias ou linhas com apenas espaços
+    const referenceTexts = textString.split(/\n\s*\n/).filter(text => text.trim() !== '');
+    
+    const references = referenceTexts.map(text => {
+      return {
+        style,
+        title: text.trim(),
+        importSource: 'plaintext',
+        formattedReference: preservarHTML ? `<p>${text.trim()}</p>` : text.trim()
+      };
+    });
+    
+    logger.info(`${references.length} referências extraídas do texto plano`);
+    
+    // Salvar referências
+    if (references.length === 0) {
+      return res.status(200).json({
+        success: true,
+        message: 'Nenhuma referência encontrada no arquivo de texto',
+        stats: {
+          received: 0,
+          valid: 0,
+          saved: 0
+        }
+      });
+    }
+    
+    const savedReferences = await Reference.insertMany(references);
+    
+    return res.status(200).json({
+      success: true,
+      message: `${savedReferences.length} referências importadas com sucesso`,
+      stats: {
+        received: references.length,
+        valid: references.length,
+        saved: savedReferences.length
+      }
+    });
+  } catch (error) {
+    logger.error('Erro ao processar arquivo de texto plano', { error });
+    next(error);
+  }
+}
+
+/**
+ * Mapeia tipos BibTeX para tipos internos de referência
+ * @param {String} bibtexType - Tipo do BibTeX
+ * @returns {String} - Tipo interno de referência
+ */
+function mapBibTexTypeToReferenceType(bibtexType) {
+  const typeMapping = {
+    'article': 'artigo',
+    'book': 'livro',
+    'booklet': 'livro',
+    'inbook': 'livro',
+    'incollection': 'livro',
+    'inproceedings': 'conferencia',
+    'conference': 'conferencia',
+    'manual': 'manual',
+    'mastersthesis': 'dissertacao',
+    'phdthesis': 'dissertacao',
+    'proceedings': 'conferencia',
+    'techreport': 'relatorio',
+    'unpublished': 'outro',
+    'misc': 'outro'
+  };
+  
+  return typeMapping[bibtexType.toLowerCase()] || 'outro';
+}
+
+/**
+ * Mapeia tipos RIS para tipos internos de referência
+ * @param {String} risType - Tipo do RIS
+ * @returns {String} - Tipo interno de referência
+ */
+function mapRISTypeToReferenceType(risType) {
+  const typeMapping = {
+    'JOUR': 'artigo',
+    'JFULL': 'artigo',
+    'BOOK': 'livro',
+    'CHAP': 'livro',
+    'CONF': 'conferencia',
+    'CPAPER': 'conferencia',
+    'THES': 'dissertacao',
+    'RPRT': 'relatorio',
+    'ELEC': 'site',
+    'ICOMM': 'site',
+    'GEN': 'outro',
+    'UNPB': 'outro'
+  };
+  
+  return typeMapping[risType] || 'outro';
 }
 
 module.exports = referenceController; 
