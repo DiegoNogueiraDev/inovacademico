@@ -12,7 +12,9 @@ package-lock.json
 # Produção/Build
 /build
 /dist
-/.next/
+# Next.js
+/.next
+.next
 /out/
 
 # Variáveis de ambiente
