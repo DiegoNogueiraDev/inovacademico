@@ -190,57 +190,109 @@ export default function ImportarReferencias() {
         }
       } else {
         // Processar texto
-        endpoint = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/references/import-json`;
-        
-        // Criar objeto para envio dependendo do formato
-        const dadosTexto = {
-          references: [{
-            title: texto,
-            style: 'abnt',
-            formattedReference: preservarHTML ? texto : texto,
-            importSource: formato
-          }]
-        };
-        
-        // Para BibTeX e RIS, enviar como texto para processamento especial
-        if (formato === 'bibtex' || formato === 'ris') {
-          dadosTexto.texto = texto;
-          dadosTexto.formato = formato;
-          dadosTexto.preservarHTML = preservarHTML;
-        }
-        
-        try {
-          const response = await fetch(endpoint, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(dadosTexto)
-          });
+        if (formato === 'bibtex' || formato === 'ris' || formato === 'html' || formato === 'plaintext') {
+          // Formatos que devem ser processados como texto pelo backend
+          // Utilizar a rota de upload mas enviando o conteúdo como um arquivo criado em memória
+          endpoint = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/references/upload`;
           
-          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || `Erro ${response.status}: ${response.statusText}`);
+          try {
+            // Criar um arquivo Blob a partir do texto
+            const textBlob = new Blob([texto], { type: 'text/plain' });
+            
+            // Criar um objeto File a partir do Blob
+            const textFile = new File([textBlob], `imported-text.${formato === 'plaintext' ? 'txt' : formato}`, { 
+              type: formato === 'bibtex' ? 'application/x-bibtex' : 
+                    formato === 'ris' ? 'application/x-research-info-systems' :
+                    formato === 'html' ? 'text/html' : 'text/plain'
+            });
+            
+            // Criar FormData para enviar o arquivo
+            const formData = new FormData();
+            formData.append('file', textFile);
+            formData.append('formato', formato);
+            formData.append('preservarHTML', preservarHTML ? 'true' : 'false');
+            
+            // Enviar o FormData para o endpoint de upload
+            const response = await fetch(endpoint, {
+              method: 'POST',
+              body: formData,
+            });
+            
+            if (!response.ok) {
+              try {
+                const errorData = await response.json();
+                throw new Error(errorData.message || `Erro ${response.status}: ${response.statusText}`);
+              } catch (jsonError) {
+                throw new Error(`Erro ${response.status}: O servidor retornou uma resposta inválida.`);
+              }
+            }
+            
+            const resultado = await response.json();
+            
+            // Sucesso
+            const mensagemSucesso = `Texto importado com sucesso! ${resultado.stats?.saved || resultado.importadas || 0} referências adicionadas.`;
+            
+            setMessage({
+              type: 'success',
+              text: mensagemSucesso
+            });
+            
+            // Mostrar modal de sucesso
+            showModal(mensagemSucesso, 'success');
+            
+            // Limpar formulário
+            setTexto('');
+          } catch (textError) {
+            console.error('Erro ao processar texto:', textError);
+            throw new Error(textError.message || 'Erro ao processar texto. Verifique o formato e tente novamente.');
           }
+        } else {
+          // Para JSON ou formatos específicos que usam import-json
+          endpoint = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/references/import-json`;
           
-          const resultado = await response.json();
+          // Criar objeto para envio dependendo do formato
+          const dadosTexto = {
+            references: [{
+              title: texto,
+              style: 'abnt',
+              formattedReference: preservarHTML ? texto : texto,
+              importSource: formato
+            }]
+          };
           
-          // Sucesso
-          const mensagemSucesso = `Referências importadas com sucesso! ${resultado.stats?.saved || resultado.importadas || 0} referências adicionadas.`;
-          
-          setMessage({
-            type: 'success',
-            text: mensagemSucesso
-          });
-          
-          // Mostrar modal de sucesso
-          showModal(mensagemSucesso, 'success');
-          
-          // Limpar formulário
-          setTexto('');
-        } catch (textError) {
-          console.error('Erro ao processar texto:', textError);
-          throw new Error(textError.message || 'Erro ao processar texto. Verifique o formato e tente novamente.');
+          try {
+            const response = await fetch(endpoint, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify(dadosTexto)
+            });
+            
+            if (!response.ok) {
+              const errorData = await response.json();
+              throw new Error(errorData.message || `Erro ${response.status}: ${response.statusText}`);
+            }
+            
+            const resultado = await response.json();
+            
+            // Sucesso
+            const mensagemSucesso = `Referências importadas com sucesso! ${resultado.stats?.saved || resultado.importadas || 0} referências adicionadas.`;
+            
+            setMessage({
+              type: 'success',
+              text: mensagemSucesso
+            });
+            
+            // Mostrar modal de sucesso
+            showModal(mensagemSucesso, 'success');
+            
+            // Limpar formulário
+            setTexto('');
+          } catch (textError) {
+            console.error('Erro ao processar texto:', textError);
+            throw new Error(textError.message || 'Erro ao processar texto. Verifique o formato e tente novamente.');
+          }
         }
       }
     } catch (error) {

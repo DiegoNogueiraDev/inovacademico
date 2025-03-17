@@ -195,6 +195,25 @@ const BibliographyForm = ({
         </div>
       </div>
       
+      {/* Alerta sobre precisão da correção */}
+      <div className="mb-5 p-4 bg-amber-900/30 border border-amber-700/50 rounded-lg text-amber-200 text-sm">
+        <div className="flex items-start">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-amber-400 mr-2 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <div>
+            <p className="font-medium mb-1">Aviso importante</p>
+            <p>Nem mesmo o ChatGPT para correções bibliográficas é 100% preciso. Estamos constantemente aprimorando nosso modelo para oferecer maior precisão. Acesse nosso gerenciador de referências e contribua com a qualidade da ferramenta!</p>
+            <a href="/referencias" className="inline-flex items-center mt-2 text-amber-400 hover:text-amber-300 transition-colors">
+              <span>Acessar gerenciador de referências</span>
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+              </svg>
+            </a>
+          </div>
+        </div>
+      </div>
+      
       <div className="flex justify-between items-center">
         <div className="text-sm text-gray-400">
           Formato selecionado: 
