@@ -6,7 +6,7 @@ import React from 'react';
 
 const LoadingAnimation = () => {
   return (
-    <div className="py-8 flex flex-col items-center">
+    <div className="py-8 flex flex-col items-center loading-animation">
       <div className="relative w-24 h-24 mx-auto mb-4">
         <img src="/icon-theme.svg" alt="InovAcadêmico Loading" className="w-full h-full animate-pulse" />
       </div>

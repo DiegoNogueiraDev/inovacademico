@@ -13,6 +13,7 @@ import StatsCounter from '../components/StatsCounter';
 import historyService from '../services/historyService';
 import apiService from '../services/apiService';
 import Link from 'next/link';
+import React from 'react';
 
 export default function Home() {
   const [correctionResult, setCorrectionResult] = useState(null);
@@ -24,6 +25,9 @@ export default function Home() {
   const [showFeedback, setShowFeedback] = useState(false);
   const [bibliographyInput, setBibliographyInput] = useState('');
   const [showHistoryDrawer, setShowHistoryDrawer] = useState(false);
+  
+  // Referência para o componente de resultado
+  const resultRef = React.useRef(null);
 
   useEffect(() => {
     // Check if the app is running in the browser
@@ -47,6 +51,13 @@ export default function Home() {
       return () => clearTimeout(timer);
     }
   }, [message, error]);
+  
+  // Efeito para fazer scroll até o resultado quando ele for carregado
+  useEffect(() => {
+    if (correctionResult && !isLoading && resultRef.current) {
+      scrollToResult();
+    }
+  }, [correctionResult, isLoading]);
 
   const handleCorrectionResult = (result) => {
     if (result.original) {
@@ -72,6 +83,16 @@ export default function Home() {
       text: 'Bibliografia corrigida com sucesso!'
     });
     setError(null);
+  };
+  
+  // Função para fazer scroll suave até o resultado
+  const scrollToResult = () => {
+    if (resultRef.current) {
+      resultRef.current.scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'start'
+      });
+    }
   };
 
   const handleHistoryItemSelect = (item) => {
@@ -325,17 +346,19 @@ export default function Home() {
         )}
 
         {correctionResult && !isLoading && (
-          <ResultDisplay 
-            correctionResult={correctionResult}
-            onRequestFeedback={handleRequestFeedback}
-            onSaveToHistory={() => {
-              // Já está sendo salvo automaticamente, mas poderia ser usado para salvar novamente
-              setMessage({
-                type: 'success',
-                text: 'Bibliografia salva no histórico!'
-              });
-            }}
-          />
+          <div ref={resultRef}>
+            <ResultDisplay 
+              correctionResult={correctionResult}
+              onRequestFeedback={handleRequestFeedback}
+              onSaveToHistory={() => {
+                // Já está sendo salvo automaticamente, mas poderia ser usado para salvar novamente
+                setMessage({
+                  type: 'success',
+                  text: 'Bibliografia salva no histórico!'
+                });
+              }}
+            />
+          </div>
         )}
         
         {/* Nova seção de destaque para o gerenciador de referências */}

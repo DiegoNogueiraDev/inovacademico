@@ -80,12 +80,14 @@ const FeedbackDialog = ({ isOpen, onClose, onSubmit }) => {
             ) : (
               <>
                 <div className="flex justify-between items-center mb-6">
-                  <Dialog.Title as="h3" className="text-lg font-medium text-center relative">
-                    <div className="flex items-center justify-center">
-                      <img src="/icon-theme.svg" alt="InovAcadêmico" className="w-8 h-8 mr-2" />
-                      <span>Enviar Feedback</span>
-                    </div>
-                  </Dialog.Title>
+                  <Dialog as="div" open={isOpen} onClose={onClose} className="relative z-50">
+                    <Dialog.Title as="h3" className="text-lg font-medium text-center relative">
+                      <div className="flex items-center justify-center">
+                        <img src="/icon-theme.svg" alt="InovAcadêmico" className="w-8 h-8 mr-2" />
+                        <span>Enviar Feedback</span>
+                      </div>
+                    </Dialog.Title>
+                  </Dialog>
                   <button 
                     onClick={onClose}
                     className="text-gray-400 hover:text-white transition-colors"

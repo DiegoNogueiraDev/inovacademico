@@ -6,20 +6,78 @@ import { useState, useEffect } from 'react';
 import hljs from 'highlight.js';
 import 'highlight.js/styles/atom-one-dark.css';
 import { motion, AnimatePresence } from 'framer-motion';
+import DOMPurify from 'dompurify';
+
+// Função para criar uma explicação para tags HTML
+const explainHtmlTag = (text) => {
+  const tagExplanations = {
+    '<em>': '(em itálico)',
+    '</em>': '(fim do itálico)',
+    '<strong>': '(em negrito)',
+    '</strong>': '(fim do negrito)',
+    '<i>': '(em itálico)',
+    '</i>': '(fim do itálico)',
+    '<b>': '(em negrito)',
+    '</b>': '(fim do negrito)',
+    '<u>': '(sublinhado)',
+    '</u>': '(fim do sublinhado)',
+    '<sup>': '(sobrescrito)',
+    '</sup>': '(fim do sobrescrito)',
+    '<sub>': '(subscrito)',
+    '</sub>': '(fim do subscrito)',
+  };
+  
+  // Substitui cada tag HTML por sua explicação
+  let explainedText = text;
+  Object.entries(tagExplanations).forEach(([tag, explanation]) => {
+    explainedText = explainedText.replace(new RegExp(tag, 'g'), `${tag} ${explanation} `);
+  });
+  
+  return explainedText;
+};
+
+// Função para processar o texto com tags HTML
+const processHtmlTags = (text) => {
+  // Verifica se o texto contém tags HTML
+  const containsHtmlTags = /<\/?[a-z][\s\S]*>/i.test(text);
+  
+  if (containsHtmlTags) {
+    // Sanitiza o HTML para evitar XSS
+    const sanitizedHtml = DOMPurify.sanitize(text);
+    return {
+      html: sanitizedHtml,
+      containsHtml: true
+    };
+  }
+  
+  return {
+    html: text,
+    containsHtml: false
+  };
+};
 
 const ResultDisplay = ({ correctionResult, onSaveToHistory, onRequestFeedback }) => {
   const [copied, setCopied] = useState(false);
   const [highlightedResult, setHighlightedResult] = useState('');
   const [activeTab, setActiveTab] = useState('comparison');
+  const [processedResult, setProcessedResult] = useState({ html: '', containsHtml: false });
+  const [showExplanation, setShowExplanation] = useState(false);
   
   useEffect(() => {
     if (correctionResult?.corrected) {
+      // Processa o texto para verificar tags HTML
+      const processed = processHtmlTags(correctionResult.corrected);
+      setProcessedResult(processed);
+      
       // Simulação básica de destaque para bibliografia
       const highlighted = hljs.highlight(
         correctionResult.corrected,
         { language: 'markdown' }
       ).value;
       setHighlightedResult(highlighted);
+      
+      // Verifica se há tags HTML literais no texto
+      setShowExplanation(/<[a-z][a-z0-9]*>|<\/[a-z][a-z0-9]*>/i.test(correctionResult.corrected));
     }
   }, [correctionResult]);
 
@@ -95,6 +153,32 @@ const ResultDisplay = ({ correctionResult, onSaveToHistory, onRequestFeedback })
               </div>
             </div>
             
+            {/* Mostrar explicação sobre tags HTML se necessário */}
+            {showExplanation && (
+              <div className="mb-4 p-3 bg-gray-800/80 rounded-md border-l-2 border-orange-500">
+                <div className="flex items-start">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-orange-400 mt-0.5 mr-2 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="12" y1="8" x2="12" y2="12" />
+                    <line x1="12" y1="16" x2="12.01" y2="16" />
+                  </svg>
+                  <div>
+                    <h4 className="text-sm font-medium text-orange-300 mb-1">Formatação detectada</h4>
+                    <p className="text-xs text-gray-400">
+                      O texto contém tags HTML de formatação. Aqui está o significado:
+                    </p>
+                    <ul className="mt-2 space-y-1 text-xs text-gray-300">
+                      <li><code className="bg-gray-700 px-1 rounded">&lt;em&gt; ou &lt;i&gt;</code>: Indica texto em itálico</li>
+                      <li><code className="bg-gray-700 px-1 rounded">&lt;strong&gt; ou &lt;b&gt;</code>: Indica texto em negrito</li>
+                      <li><code className="bg-gray-700 px-1 rounded">&lt;u&gt;</code>: Indica texto sublinhado</li>
+                      <li><code className="bg-gray-700 px-1 rounded">&lt;sup&gt;</code>: Indica texto sobrescrito</li>
+                      <li><code className="bg-gray-700 px-1 rounded">&lt;sub&gt;</code>: Indica texto subscrito</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            )}
+            
             {/* Tabs */}
             <div className="flex border-b border-gray-700 mb-4">
               <button
@@ -148,7 +232,11 @@ const ResultDisplay = ({ correctionResult, onSaveToHistory, onRequestFeedback })
                     <h3 className="text-rose-300 font-medium text-sm">Bibliografia Corrigida</h3>
                   </div>
                   <div className="p-3 bg-gray-800 rounded-md text-white border-l-2 border-rose-500 font-mono text-sm">
-                    <pre dangerouslySetInnerHTML={{ __html: highlightedResult }} />
+                    {processedResult.containsHtml ? (
+                      <div dangerouslySetInnerHTML={{ __html: processedResult.html }} />
+                    ) : (
+                      <pre dangerouslySetInnerHTML={{ __html: highlightedResult }} />
+                    )}
                   </div>
                 </div>
               </div>
@@ -173,11 +261,27 @@ const ResultDisplay = ({ correctionResult, onSaveToHistory, onRequestFeedback })
                   <h3 className="text-rose-300 font-medium text-sm">Bibliografia Corrigida</h3>
                 </div>
                 <div className="p-4 bg-gray-800 rounded-md overflow-auto shadow-inner">
-                  <pre 
-                    className="text-white whitespace-pre-wrap font-mono text-sm"
-                    dangerouslySetInnerHTML={{ __html: highlightedResult }}
-                  />
+                  {processedResult.containsHtml ? (
+                    <div 
+                      className="text-white whitespace-pre-wrap font-mono text-sm"
+                      dangerouslySetInnerHTML={{ __html: processedResult.html }} 
+                    />
+                  ) : (
+                    <pre 
+                      className="text-white whitespace-pre-wrap font-mono text-sm"
+                      dangerouslySetInnerHTML={{ __html: highlightedResult }}
+                    />
+                  )}
                 </div>
+                
+                {showExplanation && (
+                  <div className="mt-3 p-3 bg-gray-800/50 rounded-md border border-gray-700">
+                    <h4 className="text-sm font-medium text-gray-300 mb-1">Versão com explicações:</h4>
+                    <div className="text-xs text-gray-400 whitespace-pre-wrap font-mono">
+                      {explainHtmlTag(correctionResult.corrected)}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
             

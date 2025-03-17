@@ -129,7 +129,6 @@ export default function ImportarReferencias() {
       }
       
       // Dados para enviar à API
-      let dadosParaEnviar;
       let endpoint;
       
       if (activeTab === 'upload') {
@@ -141,69 +140,108 @@ export default function ImportarReferencias() {
         
         // Criar FormData para enviar arquivo
         const formData = new FormData();
-        formData.append('file', arquivo); // Alterado para 'file' para corresponder ao backend
+        formData.append('file', arquivo); // Nome correto do campo para o backend
         formData.append('formato', formato);
         formData.append('preservarHTML', preservarHTML ? 'true' : 'false');
         
-        endpoint = '/api/references/upload'; // Usando a rota correta
-        dadosParaEnviar = formData;
+        // Endpoint correto para o backend
+        endpoint = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/references/upload`;
+        
+        try {
+          // Configurar a requisição com o FormData
+          const response = await fetch(endpoint, {
+            method: 'POST',
+            body: formData,
+            // Não definir Content-Type aqui, o navegador vai fazer isso automaticamente com o boundary correto
+          });
+          
+          // Verificar se houve erro na resposta
+          if (!response.ok) {
+            // Tentar interpretar erro como JSON primeiro
+            try {
+              const errorData = await response.json();
+              throw new Error(errorData.message || `Erro ${response.status}: ${response.statusText}`);
+            } catch (jsonError) {
+              // Se não for possível interpretar como JSON (como no caso de HTML), mostrar erro genérico
+              throw new Error(`Erro ${response.status}: O servidor retornou uma resposta inválida.`);
+            }
+          }
+          
+          // Processar resposta
+          const resultado = await response.json();
+          
+          // Sucesso
+          const mensagemSucesso = `${fileName} importado com sucesso! ${resultado.stats?.saved || resultado.importadas || 0} referências adicionadas.`;
+          
+          setMessage({
+            type: 'success',
+            text: mensagemSucesso
+          });
+          
+          // Mostrar modal de sucesso
+          showModal(mensagemSucesso, 'success');
+          
+          // Limpar formulário
+          setFileName('');
+          if (fileInputRef.current) fileInputRef.current.value = '';
+        } catch (uploadError) {
+          console.error('Erro ao fazer upload do arquivo:', uploadError);
+          throw new Error(uploadError.message || 'Erro ao enviar arquivo. Verifique sua conexão e tente novamente.');
+        }
       } else {
         // Processar texto
-        endpoint = '/api/references/import-json'; // Usando a rota correta
-        dadosParaEnviar = {
-          texto,
-          formato,
-          preservarHTML
+        endpoint = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/references/import-json`;
+        
+        // Criar objeto para envio dependendo do formato
+        const dadosTexto = {
+          references: [{
+            title: texto,
+            style: 'abnt',
+            formattedReference: preservarHTML ? texto : texto,
+            importSource: formato
+          }]
         };
-      }
-      
-      // Fazer requisição à API
-      const opcoes = {
-        method: 'POST',
-        // Não definir Content-Type para FormData, o navegador faz isso automaticamente
-      };
-      
-      // Se não for FormData, converter para JSON
-      if (activeTab === 'texto') {
-        opcoes.headers = {
-          'Content-Type': 'application/json'
-        };
-        opcoes.body = JSON.stringify(dadosParaEnviar);
-      } else {
-        opcoes.body = dadosParaEnviar;
-      }
-      
-      const resposta = await fetch(endpoint, opcoes);
-      
-      if (!resposta.ok) {
-        const erro = await resposta.json();
-        throw new Error(erro.message || 'Erro ao importar referências');
-      }
-      
-      const resultado = await resposta.json();
-      
-      // Sucesso
-      setMessage({
-        type: 'success',
-        text: activeTab === 'upload' 
-          ? `${fileName} importado com sucesso! ${resultado.importadas || resultado.data?.length || 0} referências adicionadas.` 
-          : `Referências importadas com sucesso! ${resultado.importadas || resultado.data?.length || 0} referências adicionadas.`
-      });
-      
-      // Mostrar modal de sucesso
-      showModal(
-        activeTab === 'upload' 
-          ? `${fileName} importado com sucesso! ${resultado.importadas || resultado.data?.length || 0} referências adicionadas.` 
-          : `Referências importadas com sucesso! ${resultado.importadas || resultado.data?.length || 0} referências adicionadas.`,
-        'success'
-      );
-      
-      // Limpar formulário
-      if (activeTab === 'texto') {
-        setTexto('');
-      } else {
-        setFileName('');
-        if (fileInputRef.current) fileInputRef.current.value = '';
+        
+        // Para BibTeX e RIS, enviar como texto para processamento especial
+        if (formato === 'bibtex' || formato === 'ris') {
+          dadosTexto.texto = texto;
+          dadosTexto.formato = formato;
+          dadosTexto.preservarHTML = preservarHTML;
+        }
+        
+        try {
+          const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(dadosTexto)
+          });
+          
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || `Erro ${response.status}: ${response.statusText}`);
+          }
+          
+          const resultado = await response.json();
+          
+          // Sucesso
+          const mensagemSucesso = `Referências importadas com sucesso! ${resultado.stats?.saved || resultado.importadas || 0} referências adicionadas.`;
+          
+          setMessage({
+            type: 'success',
+            text: mensagemSucesso
+          });
+          
+          // Mostrar modal de sucesso
+          showModal(mensagemSucesso, 'success');
+          
+          // Limpar formulário
+          setTexto('');
+        } catch (textError) {
+          console.error('Erro ao processar texto:', textError);
+          throw new Error(textError.message || 'Erro ao processar texto. Verifique o formato e tente novamente.');
+        }
       }
     } catch (error) {
       // Tratamento de erro
