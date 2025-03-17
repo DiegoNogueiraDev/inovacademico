@@ -1,55 +1,57 @@
 /**
- * Script para verificar se o MongoDB está rodando
+ * Script para verificar a conexão com o MongoDB
+ * Este script é executado antes do comando 'npm run dev'
  */
+require('dotenv').config();
 const { MongoClient } = require('mongodb');
-const dotenv = require('dotenv');
-const path = require('path');
 
-// Carregar variáveis de ambiente
-dotenv.config({ path: path.join(__dirname, '../.env') });
-
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/inovacademico';
+// Recupera a string de conexão do arquivo .env
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/devnogueira';
 
 async function checkMongoConnection() {
-  console.log('\n🔍 Verificando conexão com MongoDB...');
+  console.log('🔍 Verificando conexão com o MongoDB...');
   
   let client;
   try {
+    // Tenta conectar ao MongoDB
     client = new MongoClient(MONGODB_URI, {
-      connectTimeoutMS: 5000, // Timeout de 5 segundos
-      serverSelectionTimeoutMS: 5000
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+      serverSelectionTimeoutMS: 5000, // Timeout após 5 segundos
     });
     
     await client.connect();
     
-    // Testar a conexão
-    await client.db().admin().ping();
+    // Verifica se o servidor está respondendo
+    await client.db().command({ ping: 1 });
     
-    console.log('✅ MongoDB está rodando em: ' + MONGODB_URI);
-    console.log('✅ Banco de dados pronto para uso!\n');
-    
+    console.log('✅ Conexão com MongoDB estabelecida com sucesso!');
     return true;
   } catch (error) {
-    console.error('❌ Erro ao conectar ao MongoDB!');
-    console.error('🔴 MongoDB não está disponível em: ' + MONGODB_URI);
-    console.error('⚠️  Erro: ' + error.message);
-    console.error('\n📋 Instruções:');
-    console.error('1. Certifique-se de que o serviço do MongoDB está rodando');
-    console.error('2. Verifique a URI de conexão no arquivo .env');
-    console.error('3. Se estiver usando MongoDB Atlas, verifique sua conexão com a internet');
-    console.error('\n⚠️  A aplicação pode falhar ao tentar salvar ou carregar dados!\n');
+    console.error('❌ Erro ao conectar ao MongoDB:');
+    console.error(`   ${error.message}`);
+    console.log('\n📋 Verifique se:');
+    console.log('   1. O serviço MongoDB está em execução');
+    console.log('   2. A string de conexão no arquivo .env está correta');
+    console.log('   3. As credenciais de acesso estão corretas\n');
     
-    // Não abortar o processo para permitir desenvolvimento mesmo sem MongoDB
+    // Não interrompe o início do servidor de desenvolvimento,
+    // apenas exibe o aviso
     return false;
   } finally {
+    // Fecha a conexão se foi estabelecida
     if (client) {
       await client.close();
     }
   }
 }
 
-// Executar a verificação
+// Executa a verificação
 checkMongoConnection()
-  .catch(err => {
-    console.error('Erro inesperado:', err);
+  .then(() => {
+    console.log('🚀 Iniciando o servidor de desenvolvimento...\n');
+  })
+  .catch((err) => {
+    console.error('❌ Erro inesperado:', err);
+    process.exit(1);
   }); 

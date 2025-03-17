@@ -1,5 +1,5 @@
 # Dependências
-node_modules
+/node_modules
 /.pnp
 .pnp.js
 yarn.lock
@@ -7,7 +7,8 @@ package-lock.json
 
 # Testes
 /coverage
-.next/
+.nyc_output
+
 # Produção/Build
 /build
 /dist
