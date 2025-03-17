@@ -1,0 +1,112 @@
+[
+  {
+    "tipo": "dissertacao",
+    "titulo": "Implementação de algoritmos de aprendizado de máquina para detecção de fraudes",
+    "autores": "Silva, João Carlos",
+    "ano": "2022",
+    "universidade": "Universidade Federal de São Paulo",
+    "programa": "Ciência da Computação",
+    "tipoTrabalho": "Dissertação (Mestrado)",
+    "local": "São Paulo",
+    "htmlFormatado": "<p>SILVA, João Carlos. <b>Implementação de algoritmos de aprendizado de máquina para detecção de fraudes</b>. Dissertação (Mestrado em Ciência da Computação) - Universidade Federal de São Paulo, São Paulo, 2022.</p>"
+  },
+  {
+    "tipo": "tese",
+    "titulo": "Impactos da automação em sistemas de produção industrial: perspectivas para o Brasil",
+    "autores": "Oliveira, Maria Helena",
+    "ano": "2021",
+    "universidade": "Universidade de São Paulo",
+    "programa": "Engenharia de Produção",
+    "tipoTrabalho": "Tese (Doutorado)",
+    "local": "São Paulo",
+    "htmlFormatado": "<p>OLIVEIRA, Maria Helena. <b>Impactos da automação em sistemas de produção industrial: perspectivas para o Brasil</b>. Tese (Doutorado em Engenharia de Produção) - Universidade de São Paulo, São Paulo, 2021.</p>"
+  },
+  {
+    "tipo": "norma",
+    "titulo": "Informação e documentação - Referências - Elaboração",
+    "autores": "Associação Brasileira de Normas Técnicas",
+    "ano": "2018",
+    "orgao": "ABNT",
+    "numeroNorma": "NBR 6023",
+    "local": "Rio de Janeiro",
+    "data": "2018-08-14",
+    "htmlFormatado": "<p>ASSOCIAÇÃO BRASILEIRA DE NORMAS TÉCNICAS. NBR 6023: Informação e documentação - Referências - Elaboração. Rio de Janeiro, 2018.</p>"
+  },
+  {
+    "tipo": "lei",
+    "titulo": "Lei de Diretrizes e Bases da Educação Nacional",
+    "autores": "BRASIL",
+    "ano": "1996",
+    "numeroLei": "9.394",
+    "ementa": "Estabelece as diretrizes e bases da educação nacional",
+    "local": "Brasília",
+    "secao": "1",
+    "htmlFormatado": "<p>BRASIL. Lei nº 9.394, de 20 de dezembro de 1996. Estabelece as diretrizes e bases da educação nacional. <b>Diário Oficial da União</b>, Brasília: Seção 1, 1996.</p>"
+  },
+  {
+    "tipo": "resolucao",
+    "titulo": "Diretrizes Curriculares Nacionais para os Cursos de Graduação em Computação",
+    "autores": "Conselho Nacional de Educação",
+    "ano": "2016",
+    "orgaoResponsavel": "CNE/CES",
+    "numeroResolucao": "5",
+    "ementa": "Institui as Diretrizes Curriculares Nacionais para os cursos de graduação na área da Computação",
+    "local": "Brasília",
+    "data": "2016-11-16",
+    "htmlFormatado": "<p>CONSELHO NACIONAL DE EDUCAÇÃO. Resolução nº 5, de 16 de novembro de 2016. Institui as Diretrizes Curriculares Nacionais para os cursos de graduação na área da Computação. <b>Diário Oficial da União</b>, Brasília, 2016.</p>"
+  },
+  {
+    "tipo": "revista",
+    "titulo": "Superinteressante",
+    "autores": "Editora Abril",
+    "ano": "2023",
+    "editora": "Abril",
+    "local": "São Paulo",
+    "periodicidade": "Mensal",
+    "issn": "0104-1789",
+    "htmlFormatado": "<p>EDITORA ABRIL. <b>Superinteressante</b>. São Paulo: Abril, 2023. ISSN: 0104-1789.</p>"
+  },
+  {
+    "tipo": "livro",
+    "titulo": "Inteligência Artificial: Uma Abordagem Moderna",
+    "autores": "Russell, Stuart; Norvig, Peter",
+    "ano": "2021",
+    "editora": "Elsevier",
+    "local": "Rio de Janeiro",
+    "edicao": "4",
+    "isbn": "978-85-352-9455-1",
+    "htmlFormatado": "<p>RUSSELL, Stuart; NORVIG, Peter <em>et al</em>. <b>Inteligência Artificial: Uma Abordagem Moderna</b>. 4 ed. Rio de Janeiro: Elsevier, 2021.</p>"
+  },
+  {
+    "tipo": "artigo",
+    "titulo": "A Survey on Deep Learning for Named Entity Recognition",
+    "autores": "Li, Jing; Sun, Aixin; Han, Jianglei; Li, Chenliang",
+    "ano": "2022",
+    "revista": "IEEE Transactions on Knowledge and Data Engineering",
+    "volume": "34",
+    "numero": "1",
+    "paginas": "50-70",
+    "doi": "10.1109/TKDE.2020.2981314",
+    "htmlFormatado": "<p>LI, Jing; SUN, Aixin; HAN, Jianglei; LI, Chenliang <em>et al</em>. A Survey on Deep Learning for Named Entity Recognition. <b>IEEE Transactions on Knowledge and Data Engineering</b>, v. 34, n. 1, p. 50-70, 2022.</p>"
+  },
+  {
+    "tipo": "site",
+    "titulo": "Metodologia científica: como fazer citações em trabalhos acadêmicos",
+    "autores": "Vasconcelos, Levi",
+    "ano": "2023",
+    "url": "https://www.bibliotecaacademica.com.br/metodologia/citacoes",
+    "dataAcesso": "2023-11-10",
+    "instituicao": "Biblioteca Acadêmica",
+    "htmlFormatado": "<p>VASCONCELOS, Levi. Metodologia científica: como fazer citações em trabalhos acadêmicos. <b>Biblioteca Acadêmica</b>, 2023. Disponível em: https://www.bibliotecaacademica.com.br/metodologia/citacoes. Acesso em: 10 novembro de 2023.</p>"
+  },
+  {
+    "tipo": "conferencia",
+    "titulo": "O impacto da transformação digital na produção científica brasileira",
+    "autores": "Souza, Carlos; Martins, Ana Paula",
+    "ano": "2023",
+    "evento": "Congresso Brasileiro de Tecnologia e Educação",
+    "local": "Florianópolis",
+    "paginas": "123-135",
+    "htmlFormatado": "<p>SOUZA, Carlos; MARTINS, Ana Paula <em>et al</em>. <b>O impacto da transformação digital na produção científica brasileira</b>. In: Congresso Brasileiro de Tecnologia e Educação. Florianópolis, 2023.</p>"
+  }
+] 

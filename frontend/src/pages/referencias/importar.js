@@ -19,6 +19,8 @@ export default function ImportarReferencias() {
   const [texto, setTexto] = useState('');
   const [fileName, setFileName] = useState('');
   const [fileError, setFileError] = useState('');
+  const [preservarHTML, setPreservarHTML] = useState(true);
+  const textareaRef = useRef(null);
 
   useEffect(() => {
     if (message.text) {
@@ -57,8 +59,8 @@ export default function ImportarReferencias() {
       '',  // Alguns navegadores podem não definir um tipo
     ];
 
-    if (!allowedTypes.includes(file.type) && !file.name.match(/\.(bib|json|ris|txt)$/i)) {
-      setFileError('Formato de arquivo não suportado. Por favor, envie um arquivo BibTeX, RIS, JSON ou TXT.');
+    if (!allowedTypes.includes(file.type) && !file.name.match(/\.(bib|json|ris|txt|html)$/i)) {
+      setFileError('Formato de arquivo não suportado. Por favor, envie um arquivo BibTeX, RIS, JSON, TXT ou HTML.');
       e.target.value = '';
       setFileName('');
       return;
@@ -69,6 +71,7 @@ export default function ImportarReferencias() {
     if (extension === 'bib') setFormato('bibtex');
     else if (extension === 'ris') setFormato('ris');
     else if (extension === 'json') setFormato('json');
+    else if (extension === 'html') setFormato('html');
     
     setFileName(file.name);
   };
@@ -83,16 +86,80 @@ export default function ImportarReferencias() {
     setMessage({ type: '', text: '' });
 
     try {
-      // Aqui seria feita a chamada à API para processar o arquivo ou texto
-      // Por enquanto, apenas simulamos o sucesso após 1 segundo
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Verificar se há dados para processar
+      if (activeTab === 'upload' && !fileName) {
+        throw new Error('Nenhum arquivo selecionado para importação.');
+      }
       
-      // Simulação de sucesso
+      if (activeTab === 'texto' && !texto) {
+        throw new Error('Nenhum texto para importação.');
+      }
+      
+      // Verificar se o formato foi selecionado
+      if (!formato) {
+        throw new Error('Selecione um formato de importação.');
+      }
+      
+      // Dados para enviar à API
+      let dadosParaEnviar;
+      let endpoint;
+      
+      if (activeTab === 'upload') {
+        // Obter o arquivo do input
+        const arquivo = fileInputRef.current.files[0];
+        if (!arquivo) {
+          throw new Error('Arquivo não encontrado.');
+        }
+        
+        // Criar FormData para enviar arquivo
+        const formData = new FormData();
+        formData.append('arquivo', arquivo);
+        formData.append('formato', formato);
+        formData.append('preservarHTML', preservarHTML);
+        
+        endpoint = '/api/referencias/importar/arquivo';
+        dadosParaEnviar = formData;
+      } else {
+        // Processar texto
+        endpoint = '/api/referencias/importar/texto';
+        dadosParaEnviar = {
+          texto,
+          formato,
+          preservarHTML
+        };
+      }
+      
+      // Fazer requisição à API
+      const opcoes = {
+        method: 'POST',
+        headers: {},
+        // Não definir Content-Type para FormData, o navegador faz isso automaticamente
+        // com o boundary correto. Para JSON, definimos abaixo.
+      };
+      
+      // Se não for FormData, converter para JSON
+      if (activeTab === 'texto') {
+        opcoes.headers['Content-Type'] = 'application/json';
+        opcoes.body = JSON.stringify(dadosParaEnviar);
+      } else {
+        opcoes.body = dadosParaEnviar;
+      }
+      
+      const resposta = await fetch(endpoint, opcoes);
+      
+      if (!resposta.ok) {
+        const erro = await resposta.json();
+        throw new Error(erro.mensagem || 'Erro ao importar referências');
+      }
+      
+      const resultado = await resposta.json();
+      
+      // Sucesso
       setMessage({
         type: 'success',
         text: activeTab === 'upload' 
-          ? `${fileName} importado com sucesso! 12 referências adicionadas.` 
-          : `Referências importadas com sucesso! 8 referências adicionadas.`
+          ? `${fileName} importado com sucesso! ${resultado.importadas} referências adicionadas.` 
+          : `Referências importadas com sucesso! ${resultado.importadas} referências adicionadas.`
       });
       
       // Limpar formulário
@@ -104,14 +171,64 @@ export default function ImportarReferencias() {
       }
     } catch (error) {
       // Tratamento de erro
+      console.error('Erro ao importar referências:', error);
       setMessage({
         type: 'error',
-        text: 'Erro ao importar referências. Verifique o formato e tente novamente.'
+        text: error.message || 'Erro ao importar referências. Verifique o formato e tente novamente.'
       });
-      console.error('Erro ao importar referências:', error);
     } finally {
       setIsSubmitting(false);
+      setShowAlert(true);
     }
+  };
+
+  // Função para aplicar formatação ao texto selecionado
+  const aplicarFormatacao = (tipo) => {
+    const textarea = textareaRef.current;
+    if (!textarea) {
+      return;
+    }
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const textoSelecionado = textarea.value.substring(start, end);
+    
+    if (start === end) {
+      setMessage({
+        type: 'error',
+        text: 'Selecione o texto que deseja formatar'
+      });
+      return;
+    }
+
+    let tag = '';
+    switch (tipo) {
+      case 'negrito':
+        tag = 'b';
+        break;
+      case 'italico':
+        tag = 'em';
+        break;
+      case 'sublinhado':
+        tag = 'u';
+        break;
+      default:
+        return;
+    }
+
+    const novoTexto = `<${tag}>${textoSelecionado}</${tag}>`;
+    const textoAnterior = textarea.value.substring(0, start);
+    const textoPosterior = textarea.value.substring(end);
+    const novoValor = textoAnterior + novoTexto + textoPosterior;
+    
+    setTexto(novoValor);
+    
+    // Restaurar a seleção (posicionada após a tag inserida)
+    setTimeout(() => {
+      const newPosition = start + novoTexto.length;
+      textarea.focus();
+      textarea.setSelectionRange(newPosition, newPosition);
+    }, 10);
   };
 
   // Função auxiliar para renderizar o alerta com o tema da aplicação
@@ -198,7 +315,7 @@ export default function ImportarReferencias() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <p className="text-xs sm:text-sm">
-                <span className="font-medium">Você pode usar o chatGPT ou outra, mas nenhuma é 100% precisa</span>, por isso estamos convidando você a ajudar a gente a melhorar cada vez mais. Cadastre suas referências em nossa plataforma e usaremos elas como base para aprimorar o nosso modelo.
+                <span className="font-medium">Você pode usar o chatGPT ou outra, mas nenhuma é 100% precisa</span>, por isso, estamos convidando você a ajudar a gente a melhorar cada vez mais. Cadastre suas referências em nossa plataforma e usaremos elas como base para aprimorar o nosso modelo.
               </p>
             </div>
             <button 
@@ -314,7 +431,7 @@ export default function ImportarReferencias() {
                 <>
                   <div className="mb-6">
                     <label className="block text-gray-300 mb-2 font-medium">Formato do Arquivo</label>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-3">
                       <div 
                         className={`px-3 sm:px-4 py-2 sm:py-3 border rounded-lg cursor-pointer transition-colors text-center ${
                           formato === 'bibtex' 
@@ -359,14 +476,39 @@ export default function ImportarReferencias() {
                         <div className="font-medium text-sm sm:text-base">Texto</div>
                         <div className="text-xs mt-1 text-gray-400">.txt</div>
                       </div>
+                      <div 
+                        className={`px-3 sm:px-4 py-2 sm:py-3 border rounded-lg cursor-pointer transition-colors text-center ${
+                          formato === 'html' 
+                            ? 'bg-rose-900/50 text-white border-rose-500' 
+                            : 'bg-gray-800 text-gray-300 border-gray-700 hover:bg-gray-700'
+                        }`}
+                        onClick={() => setFormato('html')}
+                      >
+                        <div className="font-medium text-sm sm:text-base">HTML</div>
+                        <div className="text-xs mt-1 text-gray-400">.html</div>
+                      </div>
                     </div>
+                  </div>
+
+                  <div className="mb-4 flex items-center">
+                    <input
+                      type="checkbox"
+                      id="preservarHTML"
+                      name="preservarHTML"
+                      checked={preservarHTML}
+                      onChange={(e) => setPreservarHTML(e.target.checked)}
+                      className="h-4 w-4 text-rose-600 focus:ring-rose-500 border-gray-700 rounded bg-gray-800"
+                    />
+                    <label htmlFor="preservarHTML" className="ml-2 text-gray-300 text-sm">
+                      Preservar formatação HTML (<b>negrito</b>, <em>itálico</em>, etc.) nas referências
+                    </label>
                   </div>
 
                   <div className="mb-6">
                     <input 
                       ref={fileInputRef}
                       type="file" 
-                      accept=".bib,.ris,.json,.txt" 
+                      accept=".bib,.ris,.json,.txt,.html" 
                       onChange={handleFileChange}
                       className="hidden" 
                     />
@@ -385,7 +527,7 @@ export default function ImportarReferencias() {
                         <div className="space-y-2">
                           <img src="/upload-animated.svg" alt="Upload" className="h-12 w-12 sm:h-14 sm:w-14 mx-auto" />
                           <div className="text-gray-300 font-medium text-xs sm:text-sm md:text-base">Clique para selecionar um arquivo ou arraste e solte aqui</div>
-                          <div className="text-gray-500 text-xs sm:text-sm">Suportamos BibTeX, RIS, JSON e TXT (máx. 5MB)</div>
+                          <div className="text-gray-500 text-xs sm:text-sm">Suportamos BibTeX, RIS, JSON, TXT e HTML (máx. 5MB)</div>
                         </div>
                       )}
                     </div>
@@ -417,7 +559,7 @@ export default function ImportarReferencias() {
                 <>
                   <div className="mb-6">
                     <label className="block text-gray-300 mb-2 font-medium">Formato do Texto</label>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-3">
                       <div 
                         className={`px-3 sm:px-4 py-2 sm:py-3 border rounded-lg cursor-pointer transition-colors text-center ${
                           formato === 'bibtex' 
@@ -458,6 +600,16 @@ export default function ImportarReferencias() {
                       >
                         <div className="font-medium text-sm sm:text-base">Texto</div>
                       </div>
+                      <div 
+                        className={`px-3 sm:px-4 py-2 sm:py-3 border rounded-lg cursor-pointer transition-colors text-center ${
+                          formato === 'html' 
+                            ? 'bg-rose-900/50 text-white border-rose-500' 
+                            : 'bg-gray-800 text-gray-300 border-gray-700 hover:bg-gray-700'
+                        }`}
+                        onClick={() => setFormato('html')}
+                      >
+                        <div className="font-medium text-sm sm:text-base">HTML</div>
+                      </div>
                     </div>
                   </div>
 
@@ -466,20 +618,52 @@ export default function ImportarReferencias() {
                       <span>Cole suas referências abaixo</span>
                       <span className="text-xs mt-1 sm:mt-0 sm:ml-2 text-gray-400">(máximo 5000 caracteres)</span>
                     </label>
+                    {formato === 'html' || formato === 'plain' ? (
+                      <div className="mb-2 flex flex-wrap gap-2">
+                        <button 
+                          type="button" 
+                          onClick={() => aplicarFormatacao('negrito')}
+                          className="px-3 py-1 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded text-sm flex items-center transition-colors"
+                        >
+                          <span className="font-bold mr-1">B</span>
+                          <span className="text-xs">Negrito</span>
+                        </button>
+                        <button 
+                          type="button" 
+                          onClick={() => aplicarFormatacao('italico')}
+                          className="px-3 py-1 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded text-sm flex items-center transition-colors"
+                        >
+                          <span className="italic mr-1">I</span>
+                          <span className="text-xs">Itálico</span>
+                        </button>
+                        <button 
+                          type="button" 
+                          onClick={() => aplicarFormatacao('sublinhado')}
+                          className="px-3 py-1 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded text-sm flex items-center transition-colors"
+                        >
+                          <span className="underline mr-1">U</span>
+                          <span className="text-xs">Sublinhado</span>
+                        </button>
+                      </div>
+                    ) : null}
                     <textarea
                       id="texto"
                       name="texto"
+                      ref={textareaRef}
                       value={texto}
                       onChange={(e) => setTexto(e.target.value)}
                       rows={8}
                       maxLength={5000}
-                      placeholder={formato === 'bibtex' 
-                        ? '@article{key2023,\n  author = {Sobrenome, Nome},\n  title = {Título do artigo},\n  journal = {Nome da revista},\n  year = {2023}\n}'
-                        : formato === 'json'
-                          ? '[\n  {\n    "author": "Sobrenome, Nome",\n    "title": "Título do livro",\n    "year": 2023\n  }\n]'
-                          : formato === 'ris'
-                            ? 'TY  - JOUR\nAU  - Sobrenome, Nome\nTI  - Título do artigo\nJO  - Nome da revista\nPY  - 2023\nER  -'
-                            : 'Cole suas referências aqui (uma por linha)'
+                      placeholder={
+                        formato === 'bibtex' 
+                          ? '@article{key2023,\n  author = {Sobrenome, Nome},\n  title = {Título do artigo},\n  journal = {Nome da revista},\n  year = {2023}\n}'
+                          : formato === 'json'
+                            ? '[\n  {\n    "author": "Sobrenome, Nome",\n    "title": "Título do livro",\n    "year": 2023,\n    "formatted": "<p>SOBRENOME, Nome. <b>Título do livro</b>. Editora, 2023.</p>"\n  }\n]'
+                            : formato === 'ris'
+                              ? 'TY  - JOUR\nAU  - Sobrenome, Nome\nTI  - Título do artigo\nJO  - Nome da revista\nPY  - 2023\nER  -'
+                              : formato === 'html'
+                                ? '<p>SOBRENOME, Nome. <b>Título do livro</b>. Editora, 2023.</p>\n<p>SOBRENOME, Nome. Título do artigo. <b>Nome da revista</b>, v. 10, n. 2, p. 45-67, 2023.</p>'
+                                : 'SOBRENOME, Nome. Título do livro. Editora, 2023.\nSOBRENOME, Nome. Título do artigo. Nome da revista, v. 10, n. 2, p. 45-67, 2023.'
                       }
                       className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-gray-800 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500 text-white font-mono text-xs sm:text-sm"
                       required
@@ -487,6 +671,16 @@ export default function ImportarReferencias() {
                     <div className="mt-1 text-right text-xs text-gray-500">
                       {texto.length}/5000 caracteres
                     </div>
+                    {preservarHTML && (
+                      <div className="mt-2 bg-rose-900/30 border-l-2 border-rose-500 pl-3 py-2 rounded text-rose-200 text-xs sm:text-sm">
+                        <p>Você pode usar tags HTML para formatação como:</p>
+                        <ul className="list-disc ml-5 mt-1 space-y-1">
+                          <li><code>&lt;b&gt;</code> para <b>negrito</b> (títulos de revistas, livros)</li>
+                          <li><code>&lt;em&gt;</code> para <em>itálico</em> (et al, termos em latim)</li>
+                          <li><code>&lt;p&gt;</code> para separar cada referência</li>
+                        </ul>
+                      </div>
+                    )}
                   </div>
                 </>
               )}
@@ -563,6 +757,26 @@ export default function ImportarReferencias() {
                     ER  -
                   </div>
                 </div>
+
+                <div>
+                  <h4 className="font-medium text-rose-400 mb-2">JSON com formatação HTML</h4>
+                  <p className="text-gray-300 text-xs sm:text-sm">
+                    O formato JSON permite incluir a versão formatada da referência com tags HTML para preservar a formatação ABNT.
+                  </p>
+                  <div className="mt-2 bg-gray-900 p-2 sm:p-3 rounded text-gray-400 text-xs font-mono overflow-x-auto">
+                    {'[\n  {\n    "author": "Sobrenome, Nome",\n    "title": "Título do livro",\n    "year": 2023,\n    "formatted": "<p>SOBRENOME, Nome. <b>Título do livro</b>. Editora, 2023.</p>"\n  }\n]'}
+                  </div>
+                </div>
+                
+                <div>
+                  <h4 className="font-medium text-rose-400 mb-2">HTML (direto)</h4>
+                  <p className="text-gray-300 text-xs sm:text-sm">
+                    Você pode fornecer diretamente referências formatadas com tags HTML seguindo o padrão ABNT.
+                  </p>
+                  <div className="mt-2 bg-gray-900 p-2 sm:p-3 rounded text-gray-400 text-xs font-mono overflow-x-auto">
+                    {'<p>ZHAO, Y. <em>et al</em>. The NLRP3 inflammasome functions as a sensor of RhoA GTPase to promote actin polymerization and cell migration. <b>Nature Immunology</b>, v. 19, n. 4, p. 293-305, 2018.</p>'}
+                  </div>
+                </div>
               </div>
             </div>
             
@@ -580,6 +794,150 @@ export default function ImportarReferencias() {
                   Ver guias de importação
                 </Link>
               </div>
+            </div>
+
+            <div className="p-4 sm:p-5 bg-gradient-to-r from-rose-900/30 to-gray-900/30 rounded-lg border border-rose-900/30">
+              <h3 className="text-lg sm:text-xl font-medium text-white mb-2">Exemplos de formatação ABNT:</h3>
+              <div className="bg-gray-900/70 p-3 rounded-lg mt-3 text-gray-300 text-sm">
+                <div dangerouslySetInnerHTML={{ __html: `
+                  <p>ZHAO, Y. <em>et al</em>. The NLRP3 inflammasome functions as a sensor of RhoA GTPase to promote actin polymerization and cell migration. <b>Nature Immunology</b>, v. 19, n. 4, p. 293-305, 2018.</p>
+                  <p>ZHENG, D.; LIWINSKI, T.; ELINAV, E. Inflammasome activation and regulation: toward a better understanding of complex mechanisms. <b>Cell Discovery</b>, v. 6, p. 36, 2020.</p>
+                  <p>SILVA, João Carlos. <b>Implementação de algoritmos de aprendizado de máquina para detecção de fraudes</b>. Dissertação (Mestrado em Ciência da Computação) - Universidade Federal de São Paulo, São Paulo, 2022.</p>
+                  <p>BRASIL. Lei nº 9.394. Estabelece as diretrizes e bases da educação nacional. Brasília: Seção 1, 1996.</p>
+                `}} />
+                <div className="mt-3 border-t border-gray-700 pt-3">
+                  <p className="text-sm text-gray-400 mb-2">Código HTML usado:</p>
+                  <pre className="text-xs text-gray-500 overflow-x-auto">
+                    {`<p>SILVA, João Carlos. <b>Implementação de algoritmos de aprendizado de máquina para detecção de fraudes</b>. Dissertação (Mestrado em Ciência da Computação) - Universidade Federal de São Paulo, São Paulo, 2022.</p>`}
+                  </pre>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4 sm:p-5 bg-gradient-to-r from-gray-800/60 to-gray-900/60 rounded-lg border border-gray-700 mt-4">
+              <h3 className="text-lg sm:text-xl font-medium text-white mb-3 sm:mb-4">Tipos de referências suportados:</h3>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                <div className="p-3 bg-gray-900/50 rounded-lg border border-gray-700">
+                  <h4 className="font-medium text-rose-400 mb-1 text-sm">Bibliográficas</h4>
+                  <ul className="text-gray-300 text-xs space-y-1">
+                    <li>• Livros</li>
+                    <li>• Artigos Científicos</li>
+                    <li>• Revistas</li>
+                    <li>• Artigos de Conferência</li>
+                  </ul>
+                </div>
+                
+                <div className="p-3 bg-gray-900/50 rounded-lg border border-gray-700">
+                  <h4 className="font-medium text-rose-400 mb-1 text-sm">Acadêmicas</h4>
+                  <ul className="text-gray-300 text-xs space-y-1">
+                    <li>• Dissertações</li>
+                    <li>• Teses</li>
+                    <li>• Monografias</li>
+                    <li>• Trabalhos de Conclusão</li>
+                  </ul>
+                </div>
+                
+                <div className="p-3 bg-gray-900/50 rounded-lg border border-gray-700">
+                  <h4 className="font-medium text-rose-400 mb-1 text-sm">Normativas e Legais</h4>
+                  <ul className="text-gray-300 text-xs space-y-1">
+                    <li>• Normas Técnicas</li>
+                    <li>• Leis</li>
+                    <li>• Resoluções</li>
+                    <li>• Portarias</li>
+                  </ul>
+                </div>
+                
+                <div className="p-3 bg-gray-900/50 rounded-lg border border-gray-700">
+                  <h4 className="font-medium text-rose-400 mb-1 text-sm">Recursos Digitais</h4>
+                  <ul className="text-gray-300 text-xs space-y-1">
+                    <li>• Sites</li>
+                    <li>• Blogs</li>
+                    <li>• Redes Sociais</li>
+                    <li>• Vídeos</li>
+                  </ul>
+                </div>
+                
+                <div className="p-3 bg-gray-900/50 rounded-lg border border-gray-700">
+                  <h4 className="font-medium text-rose-400 mb-1 text-sm">Jornalísticas</h4>
+                  <ul className="text-gray-300 text-xs space-y-1">
+                    <li>• Jornais</li>
+                    <li>• Revistas</li>
+                    <li>• Portais de Notícias</li>
+                    <li>• Entrevistas</li>
+                  </ul>
+                </div>
+                
+                <div className="p-3 bg-gray-900/50 rounded-lg border border-gray-700">
+                  <h4 className="font-medium text-rose-400 mb-1 text-sm">Outros</h4>
+                  <ul className="text-gray-300 text-xs space-y-1">
+                    <li>• Relatórios</li>
+                    <li>• Documentos Oficiais</li>
+                    <li>• Manuais</li>
+                    <li>• Guias</li>
+                  </ul>
+                </div>
+              </div>
+              
+              <p className="text-xs text-gray-400 mt-4">
+                Todos os tipos seguem as normas da ABNT para formatação de referências bibliográficas.
+                Para referências não listadas acima, você pode usar a opção de formatar manualmente o HTML.
+              </p>
+            </div>
+
+            <div className="p-4 sm:p-5 bg-gradient-to-r from-rose-900/30 to-gray-900/30 rounded-lg border border-rose-900/30 mt-4">
+              <h3 className="text-lg sm:text-xl font-medium text-white mb-2">Novos campos detalhados para artigos científicos:</h3>
+              <p className="text-gray-300 text-xs sm:text-sm mb-3">
+                Agora oferecemos campos mais detalhados para artigos científicos, permitindo uma formatação ABNT mais precisa:
+              </p>
+              
+              <div className="bg-gray-900/70 p-3 rounded-lg text-gray-300 text-sm">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <h4 className="font-medium text-rose-400 mb-2 text-sm">Campos Detalhados:</h4>
+                    <ul className="list-disc ml-5 space-y-1 text-xs">
+                      <li>Subtítulo (para artigos com subtítulos)</li>
+                      <li>Fascículo (além de volume e número)</li>
+                      <li>Página Inicial e Página Final (alternativa ao campo Páginas)</li>
+                      <li>Mês de Publicação</li>
+                      <li>Notas Adicionais (ex: idioma original)</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-rose-400 mb-2 text-sm">Exemplo Formatado:</h4>
+                    <div className="bg-gray-800/80 p-2 rounded text-xs">
+                      <div dangerouslySetInnerHTML={{ __html: `
+                        <p>CHENG, L.; ZHANG, X.; LI, Y.; WANG, P.; DU, Z. <em>et al</em>. NLRP3 gene polymorphisms and expression in rheumatoid arthritis: A systematic review and meta-analysis. <b>Experimental and Therapeutic Medicine</b>, v. 22, n. 4, p. 1-9, 2021. DOI: 10.3892/etm.2021.10549. Artigo em inglês.</p>
+                      `}} />
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="mt-3 border-t border-gray-700 pt-3">
+                  <p className="text-xs text-gray-400 mb-2">Exemplo de JSON com campos detalhados:</p>
+                  <pre className="text-xs text-gray-500 overflow-x-auto">
+{`{
+  "tipo": "artigo",
+  "titulo": "NLRP3 gene polymorphisms and expression in rheumatoid arthritis",
+  "subtitulo": "A systematic review and meta-analysis",
+  "autores": "Cheng, L.; Zhang, X.; Li, Y.; Wang, P.; Du, Z.",
+  "ano": "2021",
+  "revista": "Experimental and Therapeutic Medicine",
+  "volume": "22",
+  "numero": "4",
+  "paginas": "1-9",
+  "paginaInicial": "1",
+  "paginaFinal": "9",
+  "doi": "10.3892/etm.2021.10549",
+  "notaAdicional": "Artigo em inglês"
+}`}
+                  </pre>
+                </div>
+              </div>
+              
+              <p className="text-xs text-gray-400 mt-3">
+                Disponibilizamos um <a href="/exemplos/referencias-exemplos-artigos.json" download className="text-rose-400 hover:text-rose-300 underline">arquivo de exemplo</a> com referências de artigos sobre artrite reumatoide em formato JSON.
+              </p>
             </div>
           </div>
         </div>

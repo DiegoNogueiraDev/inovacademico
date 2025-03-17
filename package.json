@@ -8,11 +8,15 @@
         "frontend"
     ],
     "scripts": {
-        "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
-        "dev:backend": "npm run dev --workspace=backend",
-        "dev:frontend": "npm run dev --workspace=frontend",
-        "build": "concurrently \"npm run build --workspace=backend\" \"npm run build --workspace=frontend\"",
-        "start": "concurrently \"npm run start --workspace=backend\" \"npm run start --workspace=frontend\"",
+        "predev": "node ./scripts/check-mongo.js",
+        "dev:frontend": "cd frontend && npm run dev",
+        "dev:backend": "cd backend && npm run dev",
+        "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\"",
+        "start:frontend": "cd frontend && npm start",
+        "start:backend": "cd backend && npm start",
+        "start": "concurrently \"npm run start:frontend\" \"npm run start:backend\"",
+        "build:frontend": "cd frontend && npm run build",
+        "build": "npm run build:frontend",
         "test": "concurrently \"npm run test --workspace=backend\" \"npm run test --workspace=frontend\""
     },
     "keywords": [
@@ -27,11 +31,13 @@
         "concurrently": "^8.2.2"
     },
     "dependencies": {
+        "bootstrap": "^5.3.3",
         "chart.js": "^4.4.8",
         "csv-parser": "^3.2.0",
         "framer-motion": "^12.5.0",
         "highlight.js": "^11.11.1",
         "multer": "^1.4.5-lts.1",
+        "react-bootstrap": "^2.10.9",
         "react-chartjs-2": "^5.3.0"
     }
 }

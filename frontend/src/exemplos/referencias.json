@@ -1,0 +1,55 @@
+[
+  {
+    "tipo": "artigo",
+    "autores": "ZHAO, Y.; SMITH, J.; JOHNSON, A.",
+    "titulo": "The NLRP3 inflammasome functions as a sensor of RhoA GTPase to promote actin polymerization and cell migration",
+    "revista": "Nature Immunology",
+    "volume": "19",
+    "numero": "4",
+    "paginas": "293-305",
+    "ano": "2018",
+    "doi": "10.1038/s41590-018-0066-5",
+    "formatado": "<p>ZHAO, Y. <em>et al</em>. The NLRP3 inflammasome functions as a sensor of RhoA GTPase to promote actin polymerization and cell migration. <b>Nature Immunology</b>, v. 19, n. 4, p. 293-305, 2018.</p>"
+  },
+  {
+    "tipo": "artigo",
+    "autores": "ZHENG, D.; LIWINSKI, T.; ELINAV, E.",
+    "titulo": "Inflammasome activation and regulation: toward a better understanding of complex mechanisms",
+    "revista": "Cell Discovery",
+    "volume": "6",
+    "paginas": "36",
+    "ano": "2020",
+    "doi": "10.1038/s41421-020-0167-x",
+    "formatado": "<p>ZHENG, D.; LIWINSKI, T.; ELINAV, E. Inflammasome activation and regulation: toward a better understanding of complex mechanisms. <b>Cell Discovery</b>, v. 6, p. 36, 2020.</p>"
+  },
+  {
+    "tipo": "livro",
+    "autores": "SMITH, J.",
+    "titulo": "Fundamentos da Imunologia",
+    "editora": "Editora Acadêmica",
+    "local": "São Paulo",
+    "edicao": "3",
+    "ano": "2019",
+    "isbn": "978-3-16-148410-0",
+    "formatado": "<p>SMITH, J. <b>Fundamentos da Imunologia</b>. 3 ed. São Paulo: Editora Acadêmica, 2019.</p>"
+  },
+  {
+    "tipo": "site",
+    "autores": "WORLD HEALTH ORGANIZATION",
+    "titulo": "Rheumatoid arthritis",
+    "url": "https://www.who.int/news-room/fact-sheets/detail/rheumatoid-arthritis",
+    "ano": "2023",
+    "dataAcesso": "2024-05-18",
+    "formatado": "<p>WORLD HEALTH ORGANIZATION. Rheumatoid arthritis. Disponível em: https://www.who.int/news-room/fact-sheets/detail/rheumatoid-arthritis, 2023. Acesso em: 18 maio de 2024.</p>"
+  },
+  {
+    "tipo": "conferencia",
+    "autores": "MEDEIROS, F. A.; SILVA, C. R.; SANTOS, T. P.",
+    "titulo": "Polimorfismos genéticos na artrite reumatoide",
+    "evento": "Congresso Brasileiro de Reumatologia",
+    "local": "Rio de Janeiro",
+    "paginas": "45-52",
+    "ano": "2022",
+    "formatado": "<p>MEDEIROS, F. A. <em>et al</em>. <b>Polimorfismos genéticos na artrite reumatoide</b>. In: Congresso Brasileiro de Reumatologia. Rio de Janeiro, 2022.</p>"
+  }
+] 
