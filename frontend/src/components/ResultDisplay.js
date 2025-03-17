@@ -231,11 +231,11 @@ const ResultDisplay = ({ correctionResult, onSaveToHistory, onRequestFeedback })
                     <div className="w-2 h-2 rounded-full bg-rose-500 mr-2"></div>
                     <h3 className="text-rose-300 font-medium text-sm">Bibliografia Corrigida</h3>
                   </div>
-                  <div className="p-3 bg-gray-800 rounded-md text-white border-l-2 border-rose-500 font-mono text-sm">
+                  <div className="p-3 bg-gray-800 rounded-md text-white border-l-2 border-rose-500 font-mono text-sm overflow-x-auto max-w-full break-words">
                     {processedResult.containsHtml ? (
-                      <div dangerouslySetInnerHTML={{ __html: processedResult.html }} />
+                      <div dangerouslySetInnerHTML={{ __html: processedResult.html }} style={{ overflowWrap: 'break-word', wordWrap: 'break-word' }} />
                     ) : (
-                      <pre dangerouslySetInnerHTML={{ __html: highlightedResult }} />
+                      <pre className="whitespace-pre-wrap overflow-x-auto" dangerouslySetInnerHTML={{ __html: highlightedResult }} />
                     )}
                   </div>
                 </div>
@@ -248,7 +248,7 @@ const ResultDisplay = ({ correctionResult, onSaveToHistory, onRequestFeedback })
                   <div className="w-2 h-2 rounded-full bg-gray-500 mr-2"></div>
                   <h3 className="text-gray-400 font-medium text-sm">Bibliografia Original</h3>
                 </div>
-                <div className="p-4 bg-gray-800 rounded-md text-gray-300 border-l-2 border-gray-600 font-mono text-sm whitespace-pre-wrap">
+                <div className="p-3 bg-gray-800 rounded-md text-gray-300 border-l-2 border-gray-600 font-mono text-sm">
                   {correctionResult.original}
                 </div>
               </div>
@@ -260,18 +260,21 @@ const ResultDisplay = ({ correctionResult, onSaveToHistory, onRequestFeedback })
                   <div className="w-2 h-2 rounded-full bg-rose-500 mr-2"></div>
                   <h3 className="text-rose-300 font-medium text-sm">Bibliografia Corrigida</h3>
                 </div>
-                <div className="p-4 bg-gray-800 rounded-md overflow-auto shadow-inner">
+                <div className="p-3 bg-gray-800 rounded-md text-white border-l-2 border-rose-500 font-mono text-sm overflow-x-auto max-w-full break-words">
                   {processedResult.containsHtml ? (
-                    <div 
-                      className="text-white whitespace-pre-wrap font-mono text-sm"
-                      dangerouslySetInnerHTML={{ __html: processedResult.html }} 
-                    />
+                    <div dangerouslySetInnerHTML={{ __html: processedResult.html }} style={{ overflowWrap: 'break-word', wordWrap: 'break-word' }} />
                   ) : (
-                    <pre 
-                      className="text-white whitespace-pre-wrap font-mono text-sm"
-                      dangerouslySetInnerHTML={{ __html: highlightedResult }}
-                    />
+                    <pre className="whitespace-pre-wrap overflow-x-auto" dangerouslySetInnerHTML={{ __html: highlightedResult }} />
                   )}
+                </div>
+                
+                <div className="mt-4 p-3 bg-gray-800/50 rounded-md text-gray-300 border-l-2 border-orange-700 text-xs">
+                  <p className="flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Para copiar a bibliografia corrigida, clique no botão "Copiar" acima.
+                  </p>
                 </div>
                 
                 {showExplanation && (
