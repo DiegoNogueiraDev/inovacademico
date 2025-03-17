@@ -65,6 +65,9 @@ const AdicionarReferencia = () => {
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
+      {/* Modal de Ajuda */}
+      <ModalAjuda show={showHelp} setShow={setShowHelp} />
+
       {/* Alerta para mensagens */}
       {showAlert && message && (
         <CustomAlert 
@@ -100,7 +103,7 @@ const AdicionarReferencia = () => {
         </div>
 
         {/* Barra de formatação */}
-          <BarraFormatacao formRef={formRef} />
+          <BarraFormatacao formRef={formRef} onHelp={handleOpenHelp} />
           
           {/* Formulário de referência */}
           <div className="bg-gray-900/50 rounded-lg p-6 border border-gray-700">
