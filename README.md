@@ -13,8 +13,6 @@
 
 **InovAcadêmico** é uma plataforma online que utiliza Inteligência Artificial para correção automatizada de referências bibliográficas acadêmicas. O projeto visa automatizar e padronizar o processo de formatação de bibliografias em trabalhos acadêmicos, seguindo normas estabelecidas como ABNT, APA, Vancouver e outras.
 
-> **🎉 PROMOÇÃO**: TUDO DE GRAÇA POR TEMPO LIMITADO!
-
 ## ✨ Principais Funcionalidades
 
 ### 🔄 Correção Automatizada de Bibliografias
