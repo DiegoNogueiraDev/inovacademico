@@ -278,6 +278,14 @@ export default function Home() {
             Cole suas referências para corrigir conforme as normas acadêmicas (ABNT, APA, etc.)
             usando <span className="text-rose-400 font-medium">tecnologia de inteligência artificial</span>.
           </p>
+          <div className="mt-4">
+            <Link href="/referencias" className="text-rose-400 hover:text-rose-300 inline-flex items-center transition-colors">
+              <span>Acesse nosso Gerenciador de Referências</span>
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+              </svg>
+            </Link>
+          </div>
         </div>
 
         <div className="max-w-3xl mx-auto bg-gradient-to-br from-gray-800 to-rose-900/20 rounded-xl shadow-2xl border border-rose-900/20 backdrop-blur-sm p-6 mb-12 transition-all duration-500 hover:shadow-rose-500/10">
@@ -329,6 +337,32 @@ export default function Home() {
             }}
           />
         )}
+        
+        {/* Nova seção de destaque para o gerenciador de referências */}
+        <div className="max-w-3xl mx-auto bg-gradient-to-br from-gray-800 to-rose-900/20 rounded-xl shadow-lg border border-gray-700 p-6 mt-12">
+          <div className="flex flex-col md:flex-row items-center gap-4">
+            <div className="bg-rose-500/20 p-4 rounded-full flex-shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+              </svg>
+            </div>
+            <div className="flex-grow text-center md:text-left">
+              <h3 className="text-xl font-semibold text-white mb-2">Gerenciador de Referências Bibliográficas</h3>
+              <p className="text-gray-300 mb-3">
+                Além da correção, organize todas as suas referências em um só lugar. Adicione, edite, formate e exporte suas referências bibliográficas.
+              </p>
+              <Link 
+                href="/referencias" 
+                className="inline-flex items-center px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg transition-colors duration-200"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                </svg>
+                Acessar Gerenciador
+              </Link>
+            </div>
+          </div>
+        </div>
       </main>
 
       <footer className="bg-gradient-to-r from-rose-900/80 to-gray-900/80 backdrop-blur-md py-6 text-center text-gray-400 mt-12 border-t border-rose-900/30 relative z-10">
