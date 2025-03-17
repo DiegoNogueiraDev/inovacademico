@@ -7,6 +7,7 @@ const Stats = require('../models/Stats');
 const openRouterService = require('../services/openRouterService');
 const openAIService = require('../services/openAIService');
 const logger = require('../utils/logger');
+const PromptLog = require('../models/PromptLog');
 
 /**
  * Controlador de Bibliografia
@@ -49,7 +50,9 @@ const bibliographyController = {
       try {
         // Tentar com OpenRouter primeiro (serviço padrão)
         logger.debug('Tentando correção com OpenRouter');
-        const correctedText = await openRouterService.correctBibliography(bibliography, style);
+        
+        // Passamos o objeto req para o serviço para que possa salvar dados do usuário no log
+        const correctedText = await openRouterService.correctBibliography(bibliography, style, req);
         
         // Incrementar contador de correções
         await Stats.incrementCorrections(style);
@@ -212,6 +215,31 @@ const bibliographyController = {
       });
     } catch (error) {
       logger.logDBError('getStats', error, 'Stats');
+      next(error);
+    }
+  },
+  
+  /**
+   * Obter estatísticas de prompts enviados
+   * @param {Object} req - Express request object
+   * @param {Object} res - Express response object
+   * @param {Function} next - Express next middleware function
+   */
+  async getPromptStats(req, res, next) {
+    try {
+      logger.debug('Obtendo estatísticas de prompts');
+      
+      // Obter estatísticas de prompts
+      const promptStats = await PromptLog.getPromptStats();
+      
+      logger.debug('Estatísticas de prompts recuperadas com sucesso');
+      
+      return res.status(200).json({
+        success: true,
+        data: promptStats
+      });
+    } catch (error) {
+      logger.logDBError('getPromptStats', error, 'PromptLog');
       next(error);
     }
   }

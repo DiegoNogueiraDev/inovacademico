@@ -7,6 +7,7 @@ const https = require('https');
 const { config } = require('../config/env');
 const referenceRepository = require('../repositories/referenceRepository');
 const logger = require('../utils/logger');
+const PromptLog = require('../models/PromptLog');
 
 class OpenRouterService {
   constructor() {
@@ -72,12 +73,38 @@ class OpenRouterService {
   }
 
   /**
+   * Salva um log do prompt enviado e resposta recebida
+   * @param {Object} logData - Dados do prompt a serem salvos
+   * @returns {Promise<Object>} - Documento salvo ou null em caso de erro
+   */
+  async savePromptLog(logData) {
+    try {
+      return await PromptLog.savePromptLog(logData);
+    } catch (error) {
+      logger.error('Erro ao salvar log do prompt', { error: error.message });
+      return null; // Não queremos que falhas no log interrompam o fluxo principal
+    }
+  }
+
+  /**
    * Faz uma requisição à API do OpenRouter para corrigir uma bibliografia
    * @param {string} bibliography - Texto da bibliografia a ser corrigida
    * @param {string} style - Estilo de citação (ex.: abnt, apa, vancouver, mla)
+   * @param {Object} req - Objeto de requisição express (opcional)
    * @returns {Promise<string>} - Texto corrigido da bibliografia
    */
-  async correctBibliography(bibliography, style = 'abnt') {
+  async correctBibliography(bibliography, style = 'abnt', req = null) {
+    const startTime = Date.now();
+    let promptLogData = {
+      provider: 'openrouter',
+      model: this.modelName,
+      style,
+      originalLength: bibliography.length,
+      ipAddress: req?.ip,
+      userAgent: req?.headers?.['user-agent'],
+      success: false,
+    };
+
     try {
       const styleMap = {
         abnt: 'normas ABNT (Associação Brasileira de Normas Técnicas)',
@@ -109,6 +136,10 @@ Não acrescente explicações, apenas retorne o texto corrigido.`;
 
       userPrompt += `\nBibliografia:
 ${bibliography}`;
+
+      // Salvar informações do prompt
+      promptLogData.system = systemPrompt;
+      promptLogData.user = userPrompt;
 
       // Mescla os cabeçalhos padrão com os extra headers opcionais
       const headers = {
@@ -145,30 +176,69 @@ ${bibliography}`;
         }
       );
 
+      const responseTime = Date.now() - startTime;
+      
       logger.info('Resposta recebida da OpenRouter API', {
         status: response.status,
-        model: response.data?.model || 'desconhecido'
+        model: response.data?.model || 'desconhecido',
+        responseTime
       });
 
       if (response.data && response.data.choices && response.data.choices[0]?.message?.content) {
-        return response.data.choices[0].message.content.trim();
+        const correctedText = response.data.choices[0].message.content.trim();
+        
+        // Atualizar dados do log com a resposta
+        promptLogData.success = true;
+        promptLogData.response = correctedText;
+        promptLogData.responseTime = responseTime;
+        promptLogData.correctedLength = correctedText.length;
+        
+        // Salvar log assincronamente
+        this.savePromptLog(promptLogData);
+        
+        return correctedText;
       } else {
         logger.error('Formato inesperado de resposta da OpenRouter API', { 
           data: response.data
         });
+        
+        // Atualizar dados do log com o erro
+        promptLogData.success = false;
+        promptLogData.response = JSON.stringify(response.data);
+        promptLogData.responseTime = responseTime;
+        
+        // Salvar log assincronamente
+        this.savePromptLog(promptLogData);
+        
         throw new Error('Nenhuma resposta válida foi recebida do modelo de IA');
       }
     } catch (error) {
+      const responseTime = Date.now() - startTime;
+      
       if (error.response) {
         logger.error('Erro na API do OpenRouter', {
           status: error.response.status,
           data: error.response.data
         });
+        
+        // Atualizar dados do log com o erro
+        promptLogData.success = false;
+        promptLogData.response = JSON.stringify(error.response.data);
+        promptLogData.responseTime = responseTime;
       } else {
         logger.error('Erro ao chamar OpenRouter', {
           message: error.message
         });
+        
+        // Atualizar dados do log com o erro
+        promptLogData.success = false;
+        promptLogData.response = error.message;
+        promptLogData.responseTime = responseTime;
       }
+      
+      // Salvar log assincronamente
+      this.savePromptLog(promptLogData);
+      
       throw new Error(`Falha na correção da bibliografia: ${error.message}`);
     }
   }

@@ -29,4 +29,11 @@ router.post('/feedback', bibliographyController.submitFeedback);
  */
 router.get('/stats', bibliographyController.getBibliographyStats);
 
+/**
+ * @route   GET /api/bibliography/prompt-stats
+ * @desc    Obter estatísticas dos prompts enviados aos modelos de IA
+ * @access  Public
+ */
+router.get('/prompt-stats', bibliographyController.getPromptStats);
+
 module.exports = router; 
